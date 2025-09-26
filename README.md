@@ -1,6 +1,6 @@
 # 🎙️ Speech Processing Suite
 
-A modern, full-featured web application that combines **Speech-to-Text (STT)** and **Text-to-Speech (TTS)** capabilities with neural voice synthesis and real-time speech recognition.
+A modern web application that combines **Speech-to-Text (STT)** and **Text-to-Speech (TTS)** functionality using neural voice synthesis and real-time speech recognition. Perfect for voice-to-text transcription, accessibility features, and content creation with 18+ high-quality voices.
 
 ![Speech Processing Suite Interface](assets/Screenshot%202025-09-26%20184031.png)
 
@@ -36,7 +36,7 @@ A modern, full-featured web application that combines **Speech-to-Text (STT)** a
 - Serverless function support
 - Cross-platform compatibility
 
-**🎯 Crafted with ❤️ by Jay | [Live Demo](https://tts-stt-ivory.vercel.app)**
+**🎯 Crafted with ❤️ by Jay | [Live Demo](https://stt-tts-three.vercel.app)**
 
 ## 🚀 Quick Start
 
@@ -63,7 +63,7 @@ python tts_backend.py
 ```
 
 ### 🌐 Live Demo
-**[Access the app here: https://tts-stt-ivory.vercel.app](https://tts-stt-ivory.vercel.app)**
+**[Access the app here: https://stt-tts-three.vercel.app](https://stt-tts-three.vercel.app)**
 
 The production deployment is automatically updated when changes are pushed to the main branch. The app uses Vercel's serverless functions with a minimal `requirements.txt` containing only `edge-tts` for TTS functionality. Full STT features work through the browser's Web Speech API, requiring no server-side dependencies.
 
