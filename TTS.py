@@ -1,53 +1,130 @@
-import textwrap
+"""
+High-quality Text-to-Speech module using Microsoft Edge TTS.
+Provides neural voice synthesis with multiple language support.
+"""
+
+import asyncio
+import base64
 import os
-import pygame
 import subprocess
 import tempfile
-from typing import Optional, List
+import textwrap
+from pathlib import Path
+from typing import Dict, List, Optional, Union
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Optional imports with graceful fallbacks
+try:
+    import pygame
+    PYGAME_AVAILABLE = True
+except ImportError:
+    PYGAME_AVAILABLE = False
+    logger.warning("pygame not available - audio playback disabled")
+
+try:
+    import edge_tts
+    EDGE_TTS_AVAILABLE = True
+except ImportError:
+    EDGE_TTS_AVAILABLE = False
+    logger.error("edge-tts not available - TTS functionality disabled")
 
 class TextToSpeech:
     """Text-to-Speech converter using Microsoft Edge TTS voices."""
     
-    # Available voice options
-    VOICES = {
-        'en-US-JennyNeural': 'English (US) - Jenny (Female)',
-        'en-US-GuyNeural': 'English (US) - Guy (Male)', 
-        'en-US-AriaNeural': 'English (US) - Aria (Female)',
-        'en-US-DavisNeural': 'English (US) - Davis (Male)',
-        'en-US-JaneNeural': 'English (US) - Jane (Female)',
-        'en-US-JasonNeural': 'English (US) - Jason (Male)',
-        'en-US-SaraNeural': 'English (US) - Sara (Female)',
-        'en-US-TonyNeural': 'English (US) - Tony (Male)',
-        'en-GB-SoniaNeural': 'English (UK) - Sonia (Female)',
-        'en-GB-RyanNeural': 'English (UK) - Ryan (Male)',
-        'en-IN-NeerjaNeural': 'English (India) - Neerja (Female)',
-        'en-IN-PrabhatNeural': 'English (India) - Prabhat (Male)',
-        'es-ES-ElviraNeural': 'Spanish (Spain) - Elvira (Female)',
-        'es-ES-AlvaroNeural': 'Spanish (Spain) - Alvaro (Male)',
-        'fr-FR-DeniseNeural': 'French (France) - Denise (Female)',
-        'fr-FR-HenriNeural': 'French (France) - Henri (Male)',
-        'de-DE-KatjaNeural': 'German (Germany) - Katja (Female)',
-        'de-DE-ConradNeural': 'German (Germany) - Conrad (Male)'
+    # Enhanced voice catalog with detailed metadata
+    VOICES: Dict[str, Dict[str, str]] = {
+        # English (US)
+        'en-US-JennyNeural': {'name': 'Jenny', 'gender': 'Female', 'language': 'English (US)', 'style': 'Friendly'},
+        'en-US-GuyNeural': {'name': 'Guy', 'gender': 'Male', 'language': 'English (US)', 'style': 'Friendly'},
+        'en-US-AriaNeural': {'name': 'Aria', 'gender': 'Female', 'language': 'English (US)', 'style': 'News'},
+        'en-US-DavisNeural': {'name': 'Davis', 'gender': 'Male', 'language': 'English (US)', 'style': 'News'},
+        'en-US-JaneNeural': {'name': 'Jane', 'gender': 'Female', 'language': 'English (US)', 'style': 'Clear'},
+        'en-US-JasonNeural': {'name': 'Jason', 'gender': 'Male', 'language': 'English (US)', 'style': 'Energetic'},
+        'en-US-SaraNeural': {'name': 'Sara', 'gender': 'Female', 'language': 'English (US)', 'style': 'Gentle'},
+        'en-US-TonyNeural': {'name': 'Tony', 'gender': 'Male', 'language': 'English (US)', 'style': 'Professional'},
+        
+        # English (UK)
+        'en-GB-SoniaNeural': {'name': 'Sonia', 'gender': 'Female', 'language': 'English (UK)', 'style': 'British'},
+        'en-GB-RyanNeural': {'name': 'Ryan', 'gender': 'Male', 'language': 'English (UK)', 'style': 'British'},
+        
+        # English (India)
+        'en-IN-NeerjaNeural': {'name': 'Neerja', 'gender': 'Female', 'language': 'English (India)', 'style': 'Indian'},
+        'en-IN-PrabhatNeural': {'name': 'Prabhat', 'gender': 'Male', 'language': 'English (India)', 'style': 'Indian'},
+        
+        # Spanish
+        'es-ES-ElviraNeural': {'name': 'Elvira', 'gender': 'Female', 'language': 'Spanish (Spain)', 'style': 'Spanish'},
+        'es-ES-AlvaroNeural': {'name': 'Alvaro', 'gender': 'Male', 'language': 'Spanish (Spain)', 'style': 'Spanish'},
+        
+        # French
+        'fr-FR-DeniseNeural': {'name': 'Denise', 'gender': 'Female', 'language': 'French (France)', 'style': 'French'},
+        'fr-FR-HenriNeural': {'name': 'Henri', 'gender': 'Male', 'language': 'French (France)', 'style': 'French'},
+        
+        # German
+        'de-DE-KatjaNeural': {'name': 'Katja', 'gender': 'Female', 'language': 'German (Germany)', 'style': 'German'},
+        'de-DE-ConradNeural': {'name': 'Conrad', 'gender': 'Male', 'language': 'German (Germany)', 'style': 'German'}
     }
     
-    def __init__(self, voice: str = 'en-US-JennyNeural'):
+    DEFAULT_VOICE = 'en-US-JennyNeural'
+    
+    def __init__(self, voice: str = None):
         """
         Initialize TTS with specified voice.
         
         Args:
-            voice (str): Voice ID from VOICES dictionary
+            voice (str, optional): Voice ID from VOICES dictionary. Defaults to DEFAULT_VOICE.
+        
+        Raises:
+            RuntimeError: If edge-tts is not available
         """
-        self.voice = voice if voice in self.VOICES else 'en-US-JennyNeural'
-        pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=512)
-        print(f"🔊 TTS initialized with voice: {self.VOICES.get(self.voice, self.voice)}")
+        if not EDGE_TTS_AVAILABLE:
+            raise RuntimeError("edge-tts package is required. Install with: pip install edge-tts")
+        
+        self.voice = voice if voice and voice in self.VOICES else self.DEFAULT_VOICE
+        self._audio_initialized = False
+        
+        # Initialize pygame if available
+        if PYGAME_AVAILABLE:
+            try:
+                pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=512)
+                self._audio_initialized = True
+                logger.info("Audio playback initialized")
+            except pygame.error as e:
+                logger.warning(f"Audio initialization failed: {e}")
+        
+        voice_info = self.VOICES.get(self.voice, {'name': 'Unknown', 'language': 'Unknown'})
+        logger.info(f"TTS initialized with voice: {voice_info['name']} ({voice_info['language']})")
     
     @classmethod
     def list_voices(cls) -> None:
-        """Display all available voices."""
-        print("🎭 Available Voices:")
-        print("-" * 50)
-        for voice_id, description in cls.VOICES.items():
-            print(f"{voice_id:<25} - {description}")
+        """Display all available voices in a formatted table."""
+        print("🎭 Available Neural Voices:")
+        print("-" * 80)
+        print(f"{'Voice ID':<25} {'Name':<12} {'Language':<18} {'Gender':<8} {'Style':<12}")
+        print("-" * 80)
+        
+        for voice_id, info in cls.VOICES.items():
+            print(f"{voice_id:<25} {info['name']:<12} {info['language']:<18} "
+                  f"{info['gender']:<8} {info['style']:<12}")
+        
+        print("-" * 80)
+        print(f"Total voices available: {len(cls.VOICES)}")
+    
+    @classmethod
+    def get_voices_by_language(cls, language_code: str) -> Dict[str, Dict[str, str]]:
+        """
+        Get voices filtered by language code.
+        
+        Args:
+            language_code (str): Language code like 'en-US', 'en-GB', etc.
+            
+        Returns:
+            Dict: Filtered voices dictionary
+        """
+        return {k: v for k, v in cls.VOICES.items() if k.startswith(language_code)}
     
     def set_voice(self, voice: str) -> bool:
         """

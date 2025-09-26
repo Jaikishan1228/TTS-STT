@@ -1,9 +1,13 @@
 {
   "version": 2,
+  "name": "speech-processing-suite",
   "builds": [
     {
       "src": "api/*.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb"
+      }
     },
     {
       "src": "**/*",
@@ -13,11 +17,47 @@
   "routes": [
     {
       "src": "/api/tts",
-      "dest": "/api/tts.py"
+      "dest": "/api/tts.py",
+      "methods": ["POST", "OPTIONS"]
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/(.*\\.(css|js|png|jpg|ico|svg))",
+      "dest": "/$1",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
     },
     {
       "src": "/(.*)",
       "dest": "/$1"
+    }
+  ],
+  "functions": {
+    "api/*.py": {
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type"
+        }
+      ]
     }
   ]
 }

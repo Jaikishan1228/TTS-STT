@@ -1,2 +1,5 @@
-# Main dependency for TTS functionality
-edge-tts>=6.1.0
+# Production Dependencies for Vercel Deployment
+# Minimal requirements for serverless TTS functionality
+
+# Microsoft Edge TTS - Neural voice synthesis
+edge-tts>=6.1.0,<7.0.0

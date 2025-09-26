@@ -3,51 +3,38 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
-.Python
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
 *.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# PyInstaller
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
+.Python
 
 # Virtual environments
 .env
 .venv
+env/
+venv/
+
+# IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Logs
+*.log
+pip-log.txt
 env/
 venv/
 ENV/
@@ -70,17 +57,25 @@ venv.bak/
 ehthumbs.db
 Thumbs.db
 
-# Project specific
+# Project-specific files
+# Audio files (keep .gitkeep)
 audio/*.mp3
 audio/*.wav
+audio/tts_temp_*
 !audio/.gitkeep
+
+# Logs and temporary files
 *.log
 temp/
 backup/
 screenshots/
-PROJECT_STATUS.md
 
-# Selenium
+# WebDriver files
 geckodriver.log
-chromedriver.exe
-geckodriver.exe
+chromedriver*
+geckodriver*
+
+# Development files
+test_*.html
+debug_*
+local_config.*

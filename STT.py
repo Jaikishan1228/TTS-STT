@@ -1,8 +1,19 @@
-from typing import Optional, Callable
+"""
+Advanced Speech-to-Text module with multiple backend support.
+Supports both web-based and Python-native speech recognition.
+"""
+
+import logging
 import time
 import threading
+from typing import Optional, Callable, Dict, List
+from pathlib import Path
 
-# Web-based STT imports
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Web-based STT imports with graceful fallback
 try:
     from selenium import webdriver
     from selenium.webdriver.chrome.service import Service
@@ -10,19 +21,22 @@ try:
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support import expected_conditions as EC
     from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.common.exceptions import WebDriverException, TimeoutException
     WEB_STT_AVAILABLE = True
-except ImportError:
+    logger.info("Web STT backend available")
+except ImportError as e:
     WEB_STT_AVAILABLE = False
-    print("⚠️ Web STT not available (selenium not installed)")
+    logger.warning(f"Web STT not available: {e}")
 
-# Python-native STT imports
+# Python-native STT imports with graceful fallback
 try:
     import speech_recognition as sr
     import pyaudio
     PYTHON_STT_AVAILABLE = True
-except ImportError:
+    logger.info("Python STT backend available")
+except ImportError as e:
     PYTHON_STT_AVAILABLE = False
-    print("⚠️ Python STT not available (speech_recognition/pyaudio not installed)")
+    logger.warning(f"Python STT not available: {e}")
 
 class WebSTT:
     """Web-based Speech-to-Text converter using online service."""
