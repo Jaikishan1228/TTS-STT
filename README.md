@@ -149,7 +149,10 @@ python --version
 # Clone and setup
 git clone https://github.com/Jaikishan1228/TTS-STT.git
 cd TTS-STT
-pip install -r requirements.txt
+
+# Install dependencies (choose one)
+pip install -r requirements.txt         # Basic TTS only
+pip install -r requirements-local.txt   # Full development features
 
 # Run local server
 python tts_backend.py
@@ -158,6 +161,16 @@ python tts_backend.py
 # For development with auto-reload
 # (Optional) Use nodemon or similar tools
 ```
+
+### 🌐 Browser Compatibility
+| Browser | STT Support | TTS Support | Status |
+|---------|------------|-------------|---------|
+| **Chrome** | ✅ Full | ✅ Full | Recommended |
+| **Edge** | ✅ Full | ✅ Full | Recommended |
+| **Firefox** | ⚠️ Limited | ✅ Full | Partial Support |
+| **Safari** | ⚠️ Limited | ✅ Full | Partial Support |
+
+> **Note**: For Firefox users, enable speech recognition in `about:config` → set `media.webspeech.recognition.enable` to `true`
 
 ### 🔧 Python API Usage
 ```python
