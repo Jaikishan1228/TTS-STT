@@ -1,6 +1,40 @@
 # 🎙️ Speech Processing Suite
 
-A modern web application that combines **Speech-to-Text (STT)** and **Text-to-Speech (TTS)** functionality using neural voice synthesis and real-time speech recognition. Perfect for voice-to-text transcription, accessibility features, and content creation with 18+ high-quality voices.
+A modern web application that combines **Speech-to-Text (STT)** and **Text-to-Speech (TTS)** functionality using neural voice synthesis and real-time speech recognition. Perfect for voice-to-text transcription, accessibility features, and content creation ### 🐛 Bug Reports & Feature Requests
+- Use [GitHub Issues](https://github.com/Jaikishan1228/TTS-STT/issues) to report bugs
+- Clearly describe the issue with steps to reproduce
+- For feature requests, explain the use case and expected behavior
+
+## 🔧 Troubleshooting
+
+### 📱 Mobile Device Issues
+**Problem**: Speech Recognition (STT) not working or duplicating text on mobile devices
+
+**Solution**: 
+- **Switch to a desktop computer** - This is the recommended solution
+- Use **Chrome** or **Edge** browser on desktop for best results
+- Mobile STT has known compatibility issues due to browser API limitations
+- TTS (Text-to-Speech) works fine on mobile devices
+
+### 🖥️ Desktop Browser Issues
+**Problem**: STT not working on desktop
+
+**Solutions**:
+- **Chrome/Edge**: Should work out of the box
+- **Firefox**: Enable in `about:config` → set `media.webspeech.recognition.enable` to `true`
+- **Safari**: STT not supported on macOS, use Chrome instead
+- **Opera**: STT not supported, use Chrome/Edge instead
+
+**Problem**: Microphone permission denied
+
+**Solution**: 
+- Click the microphone icon in your browser's address bar
+- Allow microphone access for the website
+- Refresh the page after granting permission
+
+## 🙏 Acknowledgments8+ high-quality voices.
+
+> **⚠️ IMPORTANT**: This application is **optimized for desktop browsers**. Mobile support is limited - STT (Speech Recognition) functionality has reliability issues on Android and iOS devices. **Use Chrome or Edge on desktop for the best experience.**
 
 ![Speech Processing Suite Interface](assets/Screenshot%202025-09-26%20184031.png)
 
@@ -21,9 +55,9 @@ A modern web application that combines **Speech-to-Text (STT)** and **Text-to-Sp
 🌐 **Modern Web Interface**
 - Professional dark theme with responsive design
 - Real-time visual feedback and status indicators
-- Mobile-optimized touch controls with haptic feedback
+- Desktop-optimized interface with full feature support
 - Progressive Web App capabilities
-- Cross-platform mobile and desktop support
+- **Best experience on desktop browsers**
 
 🔧 **Browser Compatibility**
 - Enhanced cross-browser support (Chrome, Edge, Firefox, Safari)
@@ -40,6 +74,8 @@ A modern web application that combines **Speech-to-Text (STT)** and **Text-to-Sp
 **🎯 Crafted with ❤️ by Jay | [Live Demo](https://stt-tts-three.vercel.app)**
 
 ## 🚀 Quick Start
+
+> **📖 Recommended Setup**: Use **Chrome** or **Edge** on a **desktop computer** for optimal performance and full feature compatibility.
 
 ### Local Development (Full Features)
 ```bash
@@ -174,19 +210,20 @@ python tts_backend.py
 | **Safari** | ⚠️ iOS Only | ✅ Full | Limited | Desktop STT not supported |
 | **Opera** | ❌ Not Supported | ✅ Full | TTS Only | Use Chrome/Edge for STT |
 
-#### 📱 Mobile Browsers (NEW!)
+#### 📱 Mobile Browsers ⚠️ **Limited Compatibility**
 | Platform | Browser | STT Support | TTS Support | Status | Notes |
 |----------|---------|------------|-------------|---------|-------|
-| **Android** | Chrome | ✅ Optimized | ✅ Full | Recommended | Touch-friendly interface |
-| **Android** | Firefox | ⚠️ Limited | ✅ Full | Partial | Basic functionality |
-| **iOS** | Safari | ✅ Native | ✅ Full | Good | iOS 14.5+ required |
-| **iOS** | Chrome | ⚠️ Limited | ✅ Full | Basic | Uses Safari engine |
+| **Android** | Chrome | ❌ Unreliable | ✅ Full | Not Recommended | Text duplication issues |
+| **Android** | Firefox | ❌ Not Supported | ✅ Full | TTS Only | STT functionality broken |
+| **iOS** | Safari | ❌ Inconsistent | ✅ Full | TTS Only | Limited STT support |
+| **iOS** | Chrome | ❌ Not Supported | ✅ Full | TTS Only | Uses Safari engine |
 
-> **Mobile Optimizations**: 
-> - Touch-friendly controls with haptic feedback
-> - Battery-optimized speech recognition (non-continuous mode)
-> - Mobile-specific permission handling and error messages
-> - Responsive design for small screens
+> **⚠️ Mobile Limitations**: 
+> - **Speech Recognition (STT) is NOT reliable on mobile devices**
+> - Android: Frequent text duplication and API inconsistencies
+> - iOS: Limited Web Speech API support, inconsistent behavior  
+> - **Text-to-Speech (TTS) works well on all mobile platforms**
+> - **For best experience, use desktop browsers (Chrome/Edge recommended)**
 > 
 > **Firefox Setup**: Enable speech recognition in `about:config` → set `media.webspeech.recognition.enable` to `true`  
 > **Opera Users**: Speech recognition is not supported. Voice synthesis works normally.

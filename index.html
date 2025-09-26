@@ -445,27 +445,56 @@
             };
 
             recognition.onresult = function(event) {
-                // Build complete transcript from ALL results (both final and interim)
-                let completeTranscript = '';
-                let finalTranscript = '';
-                let interimTranscript = '';
-                
-                for (let i = 0; i < event.results.length; i++) {
-                    const transcript = event.results[i][0].transcript;
+                // Android-specific fix for transcript duplication
+                if (browserInfo.isAndroid) {
+                    // Android Web Speech API sends overlapping results
+                    // Only process NEW results from the last resultIndex
+                    let newTranscript = '';
                     
-                    if (event.results[i].isFinal) {
-                        finalTranscript += transcript + ' ';
-                    } else {
-                        interimTranscript += transcript;
+                    // Process only the latest result to avoid duplication
+                    if (event.results.length > 0) {
+                        const latestResultIndex = event.results.length - 1;
+                        const latestResult = event.results[latestResultIndex];
+                        newTranscript = latestResult[0].transcript;
+                        
+                        // For Android, only update on final results to prevent constant overwrites
+                        if (latestResult.isFinal) {
+                            // Store the final result
+                            if (!transcriptArea.dataset.androidFinalText) {
+                                transcriptArea.dataset.androidFinalText = '';
+                            }
+                            transcriptArea.dataset.androidFinalText += newTranscript + ' ';
+                            transcriptArea.textContent = transcriptArea.dataset.androidFinalText;
+                            
+                            // Haptic feedback for Android
+                            if ('vibrate' in navigator) {
+                                navigator.vibrate(50);
+                            }
+                        } else {
+                            // Show interim result but don't store it
+                            const storedText = transcriptArea.dataset.androidFinalText || '';
+                            transcriptArea.textContent = storedText + newTranscript;
+                        }
                     }
-                }
+                } else {
+                    // Non-Android handling (iOS, Desktop)
+                    let completeTranscript = '';
+                    let finalTranscript = '';
+                    let interimTranscript = '';
+                    
+                    for (let i = 0; i < event.results.length; i++) {
+                        const transcript = event.results[i][0].transcript;
+                        
+                        if (event.results[i].isFinal) {
+                            finalTranscript += transcript + ' ';
+                        } else {
+                            interimTranscript += transcript;
+                        }
+                    }
 
-                // Mobile-specific handling
-                if (browserInfo.isMobile) {
-                    // Mobile devices handle results differently
                     completeTranscript = finalTranscript + interimTranscript;
                     
-                    // iOS devices often don't provide interim results well
+                    // iOS-specific handling
                     if (browserInfo.isIOS && finalTranscript) {
                         completeTranscript = finalTranscript;
                         // Provide haptic feedback on iOS when text is recognized
@@ -473,9 +502,8 @@
                             navigator.vibrate(25);
                         }
                     }
-                } else {
-                    // Desktop handling - same as before
-                    completeTranscript = finalTranscript + interimTranscript;
+                    
+                    transcriptArea.textContent = completeTranscript;
                 }
 
                 // Clear placeholder text first
@@ -483,17 +511,14 @@
                     transcriptArea.textContent === 'Listening...') {
                     transcriptArea.textContent = '';
                 }
-
-                // Display the complete transcript (no accumulation, just replace)
-                transcriptArea.textContent = completeTranscript;
                 
                 // Auto-scroll to bottom
                 transcriptArea.scrollTop = transcriptArea.scrollHeight;
                 
-                debugLog('📝 Current transcript:', completeTranscript);
+                debugLog('📝 Current transcript:', transcriptArea.textContent);
                 
                 // Mobile-specific visual feedback
-                if (browserInfo.isMobile && completeTranscript.trim()) {
+                if (browserInfo.isMobile && transcriptArea.textContent.trim()) {
                     transcriptArea.style.backgroundColor = '#f0f8ff';
                     setTimeout(() => {
                         transcriptArea.style.backgroundColor = '';
@@ -614,7 +639,12 @@
                 // Clear any stored transcript data to prevent accumulation on next session
                 delete transcriptArea.dataset.finalText;
                 
-                debugLog('� Recognition session ended, transcript cleared for next session');
+                // Android-specific cleanup
+                if (browserInfo.isAndroid) {
+                    delete transcriptArea.dataset.androidFinalText;
+                }
+                
+                debugLog('🔚 Recognition session ended, transcript cleared for next session');
                 
                 setTimeout(() => updateSTTStatus('idle', 'Ready to Listen'), 2000);
             };
@@ -686,6 +716,11 @@
                 // Clear any previous transcript data at the start of a new session
                 transcriptArea.textContent = 'Listening...';
                 delete transcriptArea.dataset.finalText;
+                
+                // Android-specific cleanup at session start
+                if (browserInfo.isAndroid) {
+                    delete transcriptArea.dataset.androidFinalText;
+                }
                 
                 // Request microphone permission explicitly
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
