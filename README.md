@@ -163,14 +163,16 @@ python tts_backend.py
 ```
 
 ### 🌐 Browser Compatibility
-| Browser | STT Support | TTS Support | Status |
-|---------|------------|-------------|---------|
-| **Chrome** | ✅ Full | ✅ Full | Recommended |
-| **Edge** | ✅ Full | ✅ Full | Recommended |
-| **Firefox** | ⚠️ Limited | ✅ Full | Partial Support |
-| **Safari** | ⚠️ Limited | ✅ Full | Partial Support |
+| Browser | STT Support | TTS Support | Status | Notes |
+|---------|------------|-------------|---------|-------|
+| **Chrome** | ✅ Full | ✅ Full | Recommended | Best performance |
+| **Edge** | ✅ Full | ✅ Full | Recommended | Native Windows integration |
+| **Firefox** | ⚠️ Manual Setup | ✅ Full | Partial | Requires `about:config` setup |
+| **Safari** | ⚠️ iOS Only | ✅ Full | Limited | Desktop STT not supported |
+| **Opera** | ❌ Not Supported | ✅ Full | TTS Only | Use Chrome/Edge for STT |
 
-> **Note**: For Firefox users, enable speech recognition in `about:config` → set `media.webspeech.recognition.enable` to `true`
+> **Firefox Setup**: Enable speech recognition in `about:config` → set `media.webspeech.recognition.enable` to `true`  
+> **Opera Users**: Speech recognition is not supported. Voice synthesis works normally.
 
 ### 🔧 Python API Usage
 ```python

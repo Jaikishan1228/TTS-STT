@@ -245,22 +245,25 @@
         const saveAudioBtn = document.getElementById('save_audio');
         const useTranscriptBtn = document.getElementById('use_transcript');
 
-        // Browser compatibility check
+        // Enhanced browser compatibility check
         function checkBrowserSupport() {
-            const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
-            const isEdge = /Edg/.test(navigator.userAgent);
-            const isFirefox = /Firefox/.test(navigator.userAgent);
-            const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+            const userAgent = navigator.userAgent;
+            const isChrome = /Chrome/.test(userAgent) && /Google Inc/.test(navigator.vendor) && !/OPR/.test(userAgent);
+            const isEdge = /Edg/.test(userAgent);
+            const isFirefox = /Firefox/.test(userAgent);
+            const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
+            const isOpera = /OPR/.test(userAgent) || /Opera/.test(userAgent);
             
             debugLog('🌐 Browser detected:', {
                 chrome: isChrome,
                 edge: isEdge,
                 firefox: isFirefox,
                 safari: isSafari,
-                userAgent: navigator.userAgent
+                opera: isOpera,
+                userAgent: userAgent
             });
             
-            return { isChrome, isEdge, isFirefox, isSafari };
+            return { isChrome, isEdge, isFirefox, isSafari, isOpera };
         }
 
         const browserInfo = checkBrowserSupport();
@@ -1149,21 +1152,29 @@
             
             let content = '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"><strong>🌐 Browser Compatibility</strong><button onclick="this.parentElement.parentElement.remove()" style="background: rgba(255,255,255,0.2); border: none; color: white; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;">✕</button></div>';
             
+            // Get actual feature support status
+            const features = supportedFeatures || checkFeatureSupport();
+            const sttIcon = features.speechRecognition ? '✅' : '❌';
+            const ttsIcon = features.speechSynthesis ? '✅' : '❌';
+            
             if (browserInfo.isChrome) {
                 content += '<div style="margin-bottom: 8px;">✅ <strong>Chrome:</strong> Full support</div>';
-                content += '<div style="font-size: 12px; opacity: 0.9;">• Speech Recognition: ✅<br>• Voice Synthesis: ✅<br>• All features working</div>';
+                content += `<div style="font-size: 12px; opacity: 0.9;">• Speech Recognition: ${sttIcon}<br>• Voice Synthesis: ${ttsIcon}<br>• Recommended browser</div>`;
             } else if (browserInfo.isEdge) {
                 content += '<div style="margin-bottom: 8px;">✅ <strong>Edge:</strong> Full support</div>';
-                content += '<div style="font-size: 12px; opacity: 0.9;">• Speech Recognition: ✅<br>• Voice Synthesis: ✅<br>• All features working</div>';
+                content += `<div style="font-size: 12px; opacity: 0.9;">• Speech Recognition: ${sttIcon}<br>• Voice Synthesis: ${ttsIcon}<br>• Recommended browser</div>`;
             } else if (browserInfo.isFirefox) {
                 content += '<div style="margin-bottom: 8px;">⚠️ <strong>Firefox:</strong> Limited support</div>';
-                content += '<div style="font-size: 12px; opacity: 0.9;">• Speech Recognition: May need enabling<br>• Voice Synthesis: ✅<br>• Type <code>about:config</code> and enable <code>media.webspeech.recognition.enable</code></div>';
+                content += `<div style="font-size: 12px; opacity: 0.9;">• Speech Recognition: ${sttIcon} ${!features.speechRecognition ? 'Needs enabling' : ''}<br>• Voice Synthesis: ${ttsIcon}<br>• Enable in <code>about:config</code> → <code>media.webspeech.recognition.enable</code></div>`;
             } else if (browserInfo.isSafari) {
                 content += '<div style="margin-bottom: 8px;">⚠️ <strong>Safari:</strong> Partial support</div>';
-                content += '<div style="font-size: 12px; opacity: 0.9;">• Speech Recognition: Limited<br>• Voice Synthesis: ✅<br>• Best experience in iOS 14.5+</div>';
+                content += `<div style="font-size: 12px; opacity: 0.9;">• Speech Recognition: ${sttIcon} ${features.speechRecognition ? 'iOS only' : 'Not supported'}<br>• Voice Synthesis: ${ttsIcon}<br>• Limited desktop support</div>`;
+            } else if (/OPR/.test(navigator.userAgent)) {
+                content += '<div style="margin-bottom: 8px;">⚠️ <strong>Opera:</strong> Partial support</div>';
+                content += `<div style="font-size: 12px; opacity: 0.9;">• Speech Recognition: ❌ Not supported<br>• Voice Synthesis: ${ttsIcon}<br>• Use Chrome or Edge for STT features</div>`;
             } else {
-                content += '<div style="margin-bottom: 8px;">❓ <strong>Other Browser</strong></div>';
-                content += '<div style="font-size: 12px; opacity: 0.9;">• For best experience, use Chrome or Edge<br>• Some features may not work</div>';
+                content += '<div style="margin-bottom: 8px;">❓ <strong>Unknown Browser</strong></div>';
+                content += `<div style="font-size: 12px; opacity: 0.9;">• Speech Recognition: ${sttIcon}<br>• Voice Synthesis: ${ttsIcon}<br>• For best experience, use Chrome or Edge</div>`;
             }
             
             guidance.innerHTML = content;
@@ -1185,21 +1196,77 @@
             }, 8000);
         }
 
-        // Feature detection and capability reporting
+        // Enhanced feature detection with browser-specific checks
         function checkFeatureSupport() {
+            const hasSTTAPI = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+            const hasTTSAPI = !!window.speechSynthesis;
+            const hasMediaDevices = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+            
+            // Browser-specific STT support detection
+            let sttSupported = false;
+            if (browserInfo.isChrome || browserInfo.isEdge) {
+                sttSupported = hasSTTAPI && hasMediaDevices;
+            } else if (browserInfo.isFirefox) {
+                // Firefox needs manual enablement
+                sttSupported = hasSTTAPI && hasMediaDevices;
+                if (sttSupported) {
+                    // Test if it's actually enabled
+                    try {
+                        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                        const testRecognition = new SpeechRecognition();
+                        testRecognition.continuous = false;
+                        // Firefox throws error if not properly enabled
+                    } catch (e) {
+                        sttSupported = false;
+                        debugLog('Firefox STT not enabled:', e.message);
+                    }
+                }
+            } else if (browserInfo.isSafari) {
+                // Safari has very limited STT support
+                sttSupported = hasSTTAPI && /iPhone|iPad/.test(navigator.userAgent);
+            } else {
+                // Other browsers (Opera, etc.) - test basic API availability
+                sttSupported = hasSTTAPI && hasMediaDevices;
+                
+                // Opera specifically has issues with STT
+                if (/OPR/.test(navigator.userAgent)) {
+                    sttSupported = false; // Opera doesn't support STT properly
+                    debugLog('Opera detected - STT not supported');
+                }
+            }
+            
+            // Browser-specific TTS support detection
+            let ttsSupported = false;
+            if (hasTTSAPI) {
+                try {
+                    // Test if speech synthesis actually works
+                    const testUtterance = new SpeechSynthesisUtterance('');
+                    ttsSupported = true;
+                } catch (e) {
+                    ttsSupported = false;
+                    debugLog('TTS test failed:', e.message);
+                }
+            }
+            
             const features = {
-                speechRecognition: !!(window.SpeechRecognition || window.webkitSpeechRecognition),
-                speechSynthesis: !!window.speechSynthesis,
-                mediaDevices: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
+                speechRecognition: sttSupported,
+                speechSynthesis: ttsSupported,
+                mediaDevices: hasMediaDevices,
                 audioContext: !!(window.AudioContext || window.webkitAudioContext),
-                webAudio: 'AudioContext' in window || 'webkitAudioContext' in window
+                webAudio: 'AudioContext' in window || 'webkitAudioContext' in window,
+                // Additional browser info
+                browserName: browserInfo.isChrome ? 'Chrome' : 
+                           browserInfo.isEdge ? 'Edge' :
+                           browserInfo.isFirefox ? 'Firefox' :
+                           browserInfo.isSafari ? 'Safari' :
+                           /OPR/.test(navigator.userAgent) ? 'Opera' : 'Unknown'
             };
             
-            console.log('🔍 Feature Support:', features);
+            debugLog('🔍 Detailed Feature Support:', features);
             
             // Show warnings for missing features
             if (!features.speechRecognition) {
-                updateSTTStatus('idle', 'Speech Recognition not supported');
+                updateSTTStatus('idle', 'Speech Recognition not supported in this browser');
             }
             
             if (!features.speechSynthesis) {
@@ -1207,7 +1274,7 @@
             }
             
             if (!features.mediaDevices) {
-                console.warn('⚠️ Media Devices API not available');
+                debugLog('⚠️ Media Devices API not available');
             }
             
             return features;
