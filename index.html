@@ -222,6 +222,7 @@
         let isRecording = false;
         let speechSynthesis = window.speechSynthesis;
         let currentUtterance = null;
+        let recognitionActive = false;
 
         // DOM Elements
         const sttStatus = document.getElementById('stt_status');
@@ -310,20 +311,22 @@
 
         if (speechRecognitionSupported && recognition) {
             recognition.onstart = function() {
+                recognitionActive = true;
                 updateSTTStatus('recording', 'Recording... Speak now!');
                 isRecording = true;
                 isRecordingDiv.textContent = 'Recording: True';
                 recordBtn.disabled = true;
                 stopBtn.disabled = false;
                 waveAnimation.style.display = 'flex';
+                debugLog('🎤 Speech recognition started');
             };
 
             recognition.onresult = function(event) {
                 let finalTranscript = '';
                 let interimTranscript = '';
 
-                // Process all results to build complete transcript
-                for (let i = 0; i < event.results.length; i++) {
+                // Process only new results starting from resultIndex
+                for (let i = event.resultIndex; i < event.results.length; i++) {
                     const transcript = event.results[i][0].transcript;
                     if (event.results[i].isFinal) {
                         finalTranscript += transcript + ' ';
@@ -343,20 +346,14 @@
                     transcriptArea.dataset.finalText = '';
                 }
 
-                // Only add new final text (avoid duplication)
+                // Add only new final text
                 if (finalTranscript.trim()) {
-                    // Check if this final text is already included
-                    const currentFinalText = transcriptArea.dataset.finalText;
-                    const newFinalText = finalTranscript.trim();
-                    
-                    if (!currentFinalText.includes(newFinalText)) {
-                        transcriptArea.dataset.finalText = currentFinalText + finalTranscript;
-                    }
+                    transcriptArea.dataset.finalText += finalTranscript;
                 }
 
-                // Display final + interim text
-                const displayText = (transcriptArea.dataset.finalText || '') + interimTranscript;
-                transcriptArea.textContent = displayText;
+                // Display current state: stored final text + current interim text
+                const currentFinalText = transcriptArea.dataset.finalText || '';
+                transcriptArea.textContent = currentFinalText + interimTranscript;
                 
                 // Auto-scroll to bottom
                 transcriptArea.scrollTop = transcriptArea.scrollHeight;
@@ -446,6 +443,7 @@
             };
 
             recognition.onend = function() {
+                recognitionActive = false;
                 updateSTTStatus('success', 'Transcription completed');
                 resetRecording();
                 
@@ -495,7 +493,7 @@
                 return;
             }
             
-            if (isRecording) {
+            if (isRecording || recognitionActive) {
                 updateSTTStatus('idle', 'Already recording');
                 return;
             }
@@ -1057,6 +1055,7 @@
 
         function resetRecording() {
             isRecording = false;
+            recognitionActive = false;
             isRecordingDiv.textContent = 'Recording: False';
             recordBtn.disabled = false;
             stopBtn.disabled = true;
