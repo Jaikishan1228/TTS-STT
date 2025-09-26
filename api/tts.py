@@ -1,9 +1,7 @@
 from http.server import BaseHTTPRequestHandler
 import json
-import os
-import tempfile
-import subprocess
-from urllib.parse import parse_qs
+import asyncio
+import base64
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -29,46 +27,57 @@ class handler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps(response).encode())
                 return
             
-            # Create temporary file
-            with tempfile.NamedTemporaryFile(suffix='.mp3', delete=False) as temp_file:
-                temp_path = temp_file.name
+            # Limit text length for serverless environment
+            text = text[:1000]
             
-            # Generate audio using edge-tts with timeout
-            cmd = [
-                'edge-tts',
-                '--voice', voice,
-                '--text', text[:1000],  # Limit text length for serverless
-                '--write-media', temp_path
-            ]
-            
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-            
-            if result.returncode == 0 and os.path.exists(temp_path):
-                # Read audio file and encode as base64
-                with open(temp_path, 'rb') as f:
-                    audio_data = f.read()
+            # Generate audio using edge-tts Python module directly
+            try:
+                import edge_tts
                 
-                import base64
-                audio_base64 = base64.b64encode(audio_data).decode('utf-8')
+                async def generate_audio():
+                    communicate = edge_tts.Communicate(text, voice)
+                    audio_data = b""
+                    async for chunk in communicate.stream():
+                        if chunk["type"] == "audio":
+                            audio_data += chunk["data"]
+                    return audio_data
                 
-                # Clean up temp file
-                os.unlink(temp_path)
+                # Run the async function
+                audio_data = asyncio.run(generate_audio())
                 
+                if audio_data:
+                    # Encode audio as base64
+                    audio_base64 = base64.b64encode(audio_data).decode('utf-8')
+                    
+                    response = {
+                        "success": True,
+                        "audio_data": audio_base64,
+                        "message": f"Audio generated successfully ({len(audio_data)} bytes)"
+                    }
+                else:
+                    response = {
+                        "success": False, 
+                        "error": "Failed to generate audio data"
+                    }
+                    
+            except ImportError:
                 response = {
-                    "success": True,
-                    "audio_data": audio_base64,
-                    "message": "Audio generated successfully"
+                    "success": False,
+                    "error": "edge-tts module not available"
                 }
-            else:
+            except Exception as tts_error:
                 response = {
-                    "success": False, 
-                    "error": f"TTS generation failed: {result.stderr}"
+                    "success": False,
+                    "error": f"TTS generation error: {str(tts_error)}"
                 }
             
             self.wfile.write(json.dumps(response).encode())
             
+        except json.JSONDecodeError:
+            response = {"success": False, "error": "Invalid JSON format"}
+            self.wfile.write(json.dumps(response).encode())
         except Exception as e:
-            response = {"success": False, "error": str(e)}
+            response = {"success": False, "error": f"Server error: {str(e)}"}
             self.wfile.write(json.dumps(response).encode())
     
     def do_OPTIONS(self):
