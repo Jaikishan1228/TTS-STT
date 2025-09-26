@@ -234,7 +234,7 @@ We welcome contributions! Here's how to get started:
 
 - 🐛 **Issues**: [GitHub Issues](https://github.com/Jaikishan1228/TTS-STT/issues)
 - 💬 **Discussions**: [GitHub Discussions](https://github.com/Jaikishan1228/TTS-STT/discussions)
-- 📧 **Contact**: [jay@example.com](mailto:jaikishannishad33@gmail.com)
+- 📧 **Contact**: [jaikishannishad33@gmail.com](mailto:jaikishannishad33@gmail.com)
 
 ---
 
