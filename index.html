@@ -322,41 +322,31 @@
             };
 
             recognition.onresult = function(event) {
-                let finalTranscript = '';
-                let interimTranscript = '';
-
-                // Process only new results starting from resultIndex
-                for (let i = event.resultIndex; i < event.results.length; i++) {
+                // Build complete transcript from ALL results (both final and interim)
+                let completeTranscript = '';
+                
+                for (let i = 0; i < event.results.length; i++) {
                     const transcript = event.results[i][0].transcript;
+                    completeTranscript += transcript;
+                    
+                    // Add space after final results
                     if (event.results[i].isFinal) {
-                        finalTranscript += transcript + ' ';
-                    } else {
-                        interimTranscript += transcript;
+                        completeTranscript += ' ';
                     }
                 }
 
                 // Clear placeholder text first
                 if (transcriptArea.textContent === 'Your speech will appear here...') {
                     transcriptArea.textContent = '';
-                    transcriptArea.dataset.finalText = '';
                 }
 
-                // Initialize final text if not set
-                if (!transcriptArea.dataset.finalText) {
-                    transcriptArea.dataset.finalText = '';
-                }
-
-                // Add only new final text
-                if (finalTranscript.trim()) {
-                    transcriptArea.dataset.finalText += finalTranscript;
-                }
-
-                // Display current state: stored final text + current interim text
-                const currentFinalText = transcriptArea.dataset.finalText || '';
-                transcriptArea.textContent = currentFinalText + interimTranscript;
+                // Display the complete transcript (no accumulation, just replace)
+                transcriptArea.textContent = completeTranscript;
                 
                 // Auto-scroll to bottom
                 transcriptArea.scrollTop = transcriptArea.scrollHeight;
+                
+                debugLog('📝 Current transcript:', completeTranscript);
             };
 
             recognition.onerror = function(event) {
@@ -447,12 +437,10 @@
                 updateSTTStatus('success', 'Transcription completed');
                 resetRecording();
                 
-                // Show final result and clean up
-                const finalText = transcriptArea.dataset.finalText || '';
-                if (finalText && finalText !== 'Your speech will appear here...') {
-                    transcriptArea.textContent = finalText.trim();
-                    debugLog('📝 Final transcript:', finalText.trim());
-                }
+                // Clear any stored transcript data to prevent accumulation on next session
+                delete transcriptArea.dataset.finalText;
+                
+                debugLog('� Recognition session ended, transcript cleared for next session');
                 
                 setTimeout(() => updateSTTStatus('idle', 'Ready to Listen'), 2000);
             };
@@ -499,6 +487,10 @@
             }
 
             try {
+                // Clear any previous transcript data at the start of a new session
+                transcriptArea.textContent = 'Listening...';
+                delete transcriptArea.dataset.finalText;
+                
                 // Request microphone permission explicitly
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                     try {
