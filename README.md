@@ -24,6 +24,12 @@ A modern, full-featured web application that combines **Speech-to-Text (STT)** a
 - Mobile-friendly touch controls
 - Progressive Web App capabilities
 
+🔧 **Browser Compatibility**
+- Enhanced cross-browser support (Chrome, Edge, Firefox, Safari)
+- Automatic feature detection and fallbacks
+- Intelligent error handling with user guidance
+- Browser-specific optimizations for best performance
+
 ☁️ **Flexible Deployment**
 - Local development server included
 - One-click Vercel deployment ready

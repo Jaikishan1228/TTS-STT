@@ -235,17 +235,67 @@
         const saveAudioBtn = document.getElementById('save_audio');
         const useTranscriptBtn = document.getElementById('use_transcript');
 
-        // Initialize Speech Recognition
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            recognition.language = languageSelect.value;
-            recognition.maxAlternatives = 1;
+        // Browser compatibility check
+        function checkBrowserSupport() {
+            const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+            const isEdge = /Edg/.test(navigator.userAgent);
+            const isFirefox = /Firefox/.test(navigator.userAgent);
+            const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
             
-            console.log('🎤 Speech Recognition initialized with language:', languageSelect.value);
+            console.log('🌐 Browser detected:', {
+                chrome: isChrome,
+                edge: isEdge,
+                firefox: isFirefox,
+                safari: isSafari,
+                userAgent: navigator.userAgent
+            });
+            
+            return { isChrome, isEdge, isFirefox, isSafari };
+        }
 
+        const browserInfo = checkBrowserSupport();
+
+        // Initialize Speech Recognition with enhanced browser support
+        function initializeSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                try {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    recognition = new SpeechRecognition();
+                    
+                    // Enhanced configuration for better browser compatibility
+                    recognition.continuous = true;
+                    recognition.interimResults = true;
+                    recognition.lang = languageSelect.value;
+                    recognition.maxAlternatives = 1;
+                    
+                    // Browser-specific optimizations
+                    if (browserInfo.isChrome || browserInfo.isEdge) {
+                        recognition.continuous = true;
+                        recognition.interimResults = true;
+                    } else if (browserInfo.isFirefox) {
+                        // Firefox has limited support, use more conservative settings
+                        recognition.continuous = false;
+                        recognition.interimResults = false;
+                    } else if (browserInfo.isSafari) {
+                        // Safari needs special handling
+                        recognition.continuous = false;
+                        recognition.interimResults = true;
+                    }
+                    
+                    console.log('🎤 Speech Recognition initialized with language:', languageSelect.value);
+                    return true;
+                } catch (error) {
+                    console.error('🔴 Speech Recognition initialization failed:', error);
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        // Initialize speech recognition
+        const speechRecognitionSupported = initializeSpeechRecognition();
+
+        if (speechRecognitionSupported && recognition) {
             recognition.onstart = function() {
                 updateSTTStatus('recording', 'Recording... Speak now!');
                 isRecording = true;
@@ -286,24 +336,82 @@
                 console.error('🔴 Speech Recognition Error:', event.error, event);
                 
                 let errorMessage = 'Error: ';
+                let userAction = '';
+                
                 switch(event.error) {
                     case 'not-allowed':
-                        errorMessage += 'Microphone permission denied. Please allow microphone access.';
+                        errorMessage += 'Microphone permission denied';
+                        userAction = 'Please click the microphone icon in your browser\'s address bar and allow access';
                         break;
                     case 'no-speech':
-                        errorMessage += 'No speech detected. Please try again.';
+                        errorMessage += 'No speech detected';
+                        userAction = 'Please speak closer to your microphone and try again';
                         break;
                     case 'audio-capture':
-                        errorMessage += 'Microphone error. Check your microphone connection.';
+                        errorMessage += 'Microphone error';
+                        userAction = 'Check your microphone connection and browser permissions';
                         break;
                     case 'network':
-                        errorMessage += 'Network error. Check your internet connection.';
+                        errorMessage += 'Network error';
+                        userAction = 'Check your internet connection';
+                        break;
+                    case 'service-not-allowed':
+                        errorMessage += 'Speech service not allowed';
+                        if (browserInfo.isFirefox) {
+                            userAction = 'Enable speech recognition in Firefox: about:config → media.webspeech.recognition.enable → true';
+                        } else {
+                            userAction = 'Try using Chrome or Edge for better compatibility';
+                        }
+                        break;
+                    case 'bad-grammar':
+                        errorMessage += 'Grammar error';
+                        userAction = 'Try speaking more clearly';
+                        break;
+                    case 'language-not-supported':
+                        errorMessage += 'Language not supported';
+                        userAction = 'Try switching to English or another supported language';
                         break;
                     default:
                         errorMessage += event.error;
+                        userAction = 'Try refreshing the page or using a different browser';
                 }
                 
                 updateSTTStatus('idle', errorMessage);
+                
+                // Show detailed user guidance
+                if (userAction) {
+                    setTimeout(() => {
+                        const helpDiv = document.createElement('div');
+                        helpDiv.style.cssText = `
+                            position: fixed;
+                            bottom: 20px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            background: #ff6b6b;
+                            color: white;
+                            padding: 15px 20px;
+                            border-radius: 8px;
+                            max-width: 400px;
+                            text-align: center;
+                            font-size: 14px;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                            z-index: 10000;
+                        `;
+                        helpDiv.innerHTML = `
+                            <div style="font-weight: bold; margin-bottom: 8px;">💡 How to fix this:</div>
+                            <div>${userAction}</div>
+                            <button onclick="this.parentElement.remove()" style="margin-top: 10px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 5px 15px; border-radius: 4px; cursor: pointer;">Got it</button>
+                        `;
+                        document.body.appendChild(helpDiv);
+                        
+                        setTimeout(() => {
+                            if (document.body.contains(helpDiv)) {
+                                helpDiv.remove();
+                            }
+                        }, 10000);
+                    }, 1000);
+                }
+                
                 resetRecording();
             };
 
@@ -321,7 +429,13 @@
                 setTimeout(() => updateSTTStatus('idle', 'Ready to Listen'), 2000);
             };
         } else {
-            updateSTTStatus('idle', 'Speech Recognition not supported in this browser');
+            let errorMessage = 'Speech Recognition not supported in this browser';
+            if (browserInfo.isFirefox) {
+                errorMessage = 'Firefox: Enable speech recognition in about:config (media.webspeech.recognition.enable)';
+            } else if (browserInfo.isSafari) {
+                errorMessage = 'Safari: Speech Recognition has limited support';
+            }
+            updateSTTStatus('idle', errorMessage);
             recordBtn.disabled = true;
         }
 
@@ -340,16 +454,64 @@
                 });
         }
 
-        // STT Event Listeners
-        recordBtn.addEventListener('click', function() {
-            if (recognition && !isRecording) {
-                recognition.start();
+        // Enhanced STT Event Listeners with browser compatibility
+        recordBtn.addEventListener('click', async function(event) {
+            event.preventDefault();
+            
+            if (!recognition) {
+                updateSTTStatus('idle', 'Speech Recognition not available');
+                return;
+            }
+            
+            if (isRecording) {
+                updateSTTStatus('idle', 'Already recording');
+                return;
+            }
+
+            try {
+                // Request microphone permission explicitly
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        stream.getTracks().forEach(track => track.stop()); // Stop the stream immediately
+                        console.log('🎤 Microphone permission confirmed');
+                    } catch (permissionError) {
+                        updateSTTStatus('idle', 'Microphone permission denied');
+                        alert('Please allow microphone access to use speech recognition');
+                        return;
+                    }
+                }
+
+                // Add delay for browser compatibility
+                setTimeout(() => {
+                    try {
+                        recognition.start();
+                        console.log('🎤 Speech recognition started');
+                    } catch (startError) {
+                        console.error('🔴 Failed to start recognition:', startError);
+                        updateSTTStatus('idle', 'Failed to start recording: ' + startError.message);
+                        resetRecording();
+                    }
+                }, 100);
+                
+            } catch (error) {
+                console.error('🔴 Recording error:', error);
+                updateSTTStatus('idle', 'Recording error: ' + error.message);
+                resetRecording();
             }
         });
 
-        stopBtn.addEventListener('click', function() {
+        stopBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            
             if (recognition && isRecording) {
-                recognition.stop();
+                try {
+                    recognition.stop();
+                    console.log('🎤 Speech recognition stopped');
+                } catch (stopError) {
+                    console.error('🔴 Failed to stop recognition:', stopError);
+                    resetRecording();
+                }
             }
         });
 
@@ -443,65 +605,118 @@
                 preferredGender = maleVoices.some(name => selectedVoice.toLowerCase().includes(name)) ? 'male' : 'female';
             }
             
-            // Find best matching voice with comprehensive scoring
-            let bestVoice = null;
-            let bestScore = -1;
-            
-            console.log(`🔍 Looking for voice: ${selectedVoice} (${targetLang}, ${preferredGender}, ${voiceName})`);
-            
-            voices.forEach(voice => {
-                let score = 0;
-                const sysVoiceName = voice.name.toLowerCase();
-                const sysVoiceLang = voice.lang;
+            // Enhanced voice matching with better browser compatibility
+            function findBestVoice(voices, selectedVoice, targetLang, preferredGender, voiceName) {
+                let bestVoice = null;
+                let bestScore = -1;
+                const fallbackVoices = [];
                 
-                // Language matching (highest priority)
-                if (sysVoiceLang === targetLang) {
-                    score += 100;
-                } else if (sysVoiceLang.startsWith(targetLang.split('-')[0])) {
-                    score += 50; // Same language, different region
-                } else if (sysVoiceLang.startsWith('en')) {
-                    score += 25; // Any English
+                console.log(`🔍 Looking for voice: ${selectedVoice} (${targetLang}, ${preferredGender}, ${voiceName})`);
+                console.log(`🎤 Available voices (${voices.length}):`, voices.map(v => `${v.name} (${v.lang})`));
+                
+                voices.forEach(voice => {
+                    let score = 0;
+                    const sysVoiceName = voice.name.toLowerCase();
+                    const sysVoiceLang = voice.lang;
+                    
+                    // Store potential fallbacks
+                    if (sysVoiceLang.startsWith('en')) {
+                        fallbackVoices.push(voice);
+                    }
+                    
+                    // Language matching (highest priority)
+                    if (sysVoiceLang === targetLang) {
+                        score += 100;
+                    } else if (sysVoiceLang.startsWith(targetLang.split('-')[0])) {
+                        score += 50; // Same language, different region
+                    } else if (sysVoiceLang.startsWith('en')) {
+                        score += 25; // Any English
+                    }
+                    
+                    // Exact name matching (very high priority)
+                    if (voiceName && sysVoiceName.includes(voiceName)) {
+                        score += 200;
+                    }
+                    
+                    // Partial name matching
+                    if (voiceName) {
+                        const voiceWords = voiceName.split(' ');
+                        voiceWords.forEach(word => {
+                            if (word.length > 2 && sysVoiceName.includes(word.toLowerCase())) {
+                                score += 50;
+                            }
+                        });
+                    }
+                    
+                    // Gender matching
+                    const isMaleVoice = maleVoices.some(male => sysVoiceName.includes(male)) ||
+                                       sysVoiceName.includes('male') || sysVoiceName.includes('man');
+                    const isFemaleVoice = femaleVoices.some(female => sysVoiceName.includes(female)) ||
+                                         sysVoiceName.includes('female') || sysVoiceName.includes('woman');
+                    
+                    if (preferredGender === 'male' && isMaleVoice) {
+                        score += 75;
+                    } else if (preferredGender === 'female' && isFemaleVoice) {
+                        score += 75;
+                    } else if (preferredGender === 'male' && isFemaleVoice) {
+                        score -= 25; // Reduced penalty
+                    } else if (preferredGender === 'female' && isMaleVoice) {
+                        score -= 25; // Reduced penalty
+                    }
+                    
+                    // Quality bonus for Neural/Natural voices
+                    if (sysVoiceName.includes('neural') || sysVoiceName.includes('natural') || 
+                        sysVoiceName.includes('premium') || sysVoiceName.includes('enhanced')) {
+                        score += 15;
+                    }
+                    
+                    // Browser-specific voice preferences
+                    if (browserInfo.isChrome && sysVoiceName.includes('google')) {
+                        score += 10;
+                    } else if (browserInfo.isEdge && sysVoiceName.includes('microsoft')) {
+                        score += 10;
+                    } else if (browserInfo.isSafari && sysVoiceName.includes('alex')) {
+                        score += 10;
+                    }
+                    
+                    console.log(`  ${voice.name} (${voice.lang}): score ${score}`);
+                    
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestVoice = voice;
+                    }
+                });
+                
+                // Enhanced fallback logic
+                if (!bestVoice || bestScore < 25) {
+                    console.log('🔄 Using fallback voice selection...');
+                    
+                    // Try different fallback strategies
+                    const strategies = [
+                        () => fallbackVoices.find(v => v.lang === targetLang),
+                        () => fallbackVoices.find(v => v.lang.startsWith(targetLang.split('-')[0])),
+                        () => fallbackVoices.find(v => preferredGender === 'female' ? 
+                            femaleVoices.some(f => v.name.toLowerCase().includes(f)) :
+                            maleVoices.some(m => v.name.toLowerCase().includes(m))),
+                        () => fallbackVoices[0],
+                        () => voices[0]
+                    ];
+                    
+                    for (const strategy of strategies) {
+                        const voice = strategy();
+                        if (voice) {
+                            bestVoice = voice;
+                            console.log(`📢 Fallback voice selected: ${voice.name} (${voice.lang})`);
+                            break;
+                        }
+                    }
                 }
                 
-                // Exact name matching (very high priority)
-                if (voiceName && sysVoiceName.includes(voiceName)) {
-                    score += 200;
-                }
-                
-                // Gender matching
-                const isMaleVoice = maleVoices.some(male => sysVoiceName.includes(male)) ||
-                                   sysVoiceName.includes('male') || sysVoiceName.includes('man');
-                const isFemaleVoice = femaleVoices.some(female => sysVoiceName.includes(female)) ||
-                                     sysVoiceName.includes('female') || sysVoiceName.includes('woman');
-                
-                if (preferredGender === 'male' && isMaleVoice) {
-                    score += 75;
-                } else if (preferredGender === 'female' && isFemaleVoice) {
-                    score += 75;
-                } else if (preferredGender === 'male' && isFemaleVoice) {
-                    score -= 50; // Penalty for wrong gender
-                } else if (preferredGender === 'female' && isMaleVoice) {
-                    score -= 50; // Penalty for wrong gender
-                }
-                
-                // Quality bonus for Neural/Natural voices
-                if (sysVoiceName.includes('neural') || sysVoiceName.includes('natural')) {
-                    score += 10;
-                }
-                
-                console.log(`  ${voice.name} (${voice.lang}): score ${score}`);
-                
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestVoice = voice;
-                }
-            });
-            
-            // Fallback if no good match found
-            if (!bestVoice && voices.length > 0) {
-                const englishVoices = voices.filter(voice => voice.lang.startsWith('en'));
-                bestVoice = englishVoices[0] || voices[0];
+                return bestVoice;
             }
+            
+            // Find the best voice using enhanced matching
+            const bestVoice = findBestVoice(voices, selectedVoice, targetLang, preferredGender, voiceName);
             
             if (bestVoice) {
                 currentUtterance.voice = bestVoice;
@@ -521,8 +736,43 @@
                 setTimeout(() => updateTTSStatus('idle', 'Ready to Speak'), 2000);
             };
 
-            currentUtterance.onerror = function() {
-                updateTTSStatus('idle', 'Speech error occurred');
+            currentUtterance.onerror = function(event) {
+                console.error('🔴 TTS Error:', event);
+                
+                let errorMessage = 'Speech error occurred';
+                let suggestion = '';
+                
+                if (event.error) {
+                    switch(event.error) {
+                        case 'not-allowed':
+                            errorMessage = 'Speech synthesis not allowed';
+                            suggestion = 'Check browser permissions for audio playback';
+                            break;
+                        case 'network':
+                            errorMessage = 'Network error during speech';
+                            suggestion = 'Check your internet connection';
+                            break;
+                        case 'synthesis-failed':
+                            errorMessage = 'Voice synthesis failed';
+                            suggestion = 'Try a different voice or shorter text';
+                            break;
+                        case 'audio-hardware':
+                            errorMessage = 'Audio hardware error';
+                            suggestion = 'Check your speakers/headphones';
+                            break;
+                        default:
+                            errorMessage = `TTS error: ${event.error}`;
+                            suggestion = 'Try refreshing the page';
+                    }
+                }
+                
+                updateTTSStatus('idle', errorMessage);
+                
+                if (suggestion) {
+                    console.log('💡 TTS Suggestion:', suggestion);
+                    // Could show user notification here if needed
+                }
+                
                 speakBtn.disabled = false;
                 stopSpeechBtn.disabled = true;
             };
@@ -781,26 +1031,73 @@
             waveAnimation.style.display = 'none';
         }
 
-        // Initialize voices when available
+        // Enhanced voice loading with browser compatibility
         let voicesLoaded = false;
+        let availableVoices = [];
+        let voiceLoadAttempts = 0;
+        const maxVoiceLoadAttempts = 10;
         
         function loadVoices() {
             const voices = speechSynthesis.getVoices();
+            voiceLoadAttempts++;
+            
             if (voices.length > 0 && !voicesLoaded) {
                 voicesLoaded = true;
-                console.log(`🎤 Loaded ${voices.length} system voices:`, voices.map(v => `${v.name} (${v.lang})`));
-                updateTTSStatus('success', 'Voice system ready');
+                availableVoices = voices;
+                
+                console.log(`🎤 Loaded ${voices.length} system voices:`, 
+                    voices.map(v => `${v.name} (${v.lang})`));
+                
+                // Group voices by language for better organization
+                const voicesByLang = {};
+                voices.forEach(voice => {
+                    const lang = voice.lang.split('-')[0];
+                    if (!voicesByLang[lang]) voicesByLang[lang] = [];
+                    voicesByLang[lang].push(voice);
+                });
+                
+                console.log('🌐 Voices by language:', voicesByLang);
+                
+                updateTTSStatus('success', `Voice system ready (${voices.length} voices)`);
                 setTimeout(() => updateTTSStatus('idle', 'Ready to Speak'), 2000);
+                
+                return true;
+            } else if (voiceLoadAttempts < maxVoiceLoadAttempts) {
+                // Keep trying to load voices
+                setTimeout(loadVoices, 500);
+            } else {
+                console.warn('⚠️ Could not load system voices after maximum attempts');
+                updateTTSStatus('idle', 'Limited voice support available');
             }
+            
+            return false;
         }
         
-        speechSynthesis.onvoiceschanged = loadVoices;
+        // Enhanced voice change event handling for different browsers
+        if ('onvoiceschanged' in speechSynthesis) {
+            speechSynthesis.onvoiceschanged = loadVoices;
+        }
         
-        // Try to load voices immediately
+        // Immediate load attempt
         loadVoices();
         
-        // Fallback: try loading voices after a delay
-        setTimeout(loadVoices, 1000);
+        // Browser-specific loading strategies
+        if (browserInfo.isChrome || browserInfo.isEdge) {
+            // Chrome/Edge typically loads voices asynchronously
+            setTimeout(loadVoices, 100);
+            setTimeout(loadVoices, 500);
+        } else if (browserInfo.isFirefox) {
+            // Firefox might need more time
+            setTimeout(loadVoices, 1000);
+            setTimeout(loadVoices, 2000);
+        } else if (browserInfo.isSafari) {
+            // Safari has different timing
+            setTimeout(loadVoices, 200);
+            setTimeout(loadVoices, 1500);
+        }
+        
+        // Universal fallback
+        setTimeout(loadVoices, 3000);
 
         // Clear transcript function
         function clearTranscript() {
@@ -817,6 +1114,100 @@
             console.log(`🎤 Voice selection changed to: ${selectedVoice}`);
             setTimeout(() => updateTTSStatus('idle', 'Ready to Speak'), 2000);
         });
+
+        // Comprehensive browser compatibility check and user guidance
+        function showBrowserGuidance() {
+            const guidance = document.createElement('div');
+            guidance.id = 'browser-guidance';
+            guidance.style.cssText = `
+                position: fixed;
+                top: 70px;
+                right: 20px;
+                width: 320px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 15px;
+                border-radius: 10px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                font-size: 14px;
+                z-index: 9999;
+                opacity: 0;
+                transform: translateX(100%);
+                transition: all 0.3s ease;
+            `;
+            
+            let content = '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"><strong>🌐 Browser Compatibility</strong><button onclick="this.parentElement.parentElement.remove()" style="background: rgba(255,255,255,0.2); border: none; color: white; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;">✕</button></div>';
+            
+            if (browserInfo.isChrome) {
+                content += '<div style="margin-bottom: 8px;">✅ <strong>Chrome:</strong> Full support</div>';
+                content += '<div style="font-size: 12px; opacity: 0.9;">• Speech Recognition: ✅<br>• Voice Synthesis: ✅<br>• All features working</div>';
+            } else if (browserInfo.isEdge) {
+                content += '<div style="margin-bottom: 8px;">✅ <strong>Edge:</strong> Full support</div>';
+                content += '<div style="font-size: 12px; opacity: 0.9;">• Speech Recognition: ✅<br>• Voice Synthesis: ✅<br>• All features working</div>';
+            } else if (browserInfo.isFirefox) {
+                content += '<div style="margin-bottom: 8px;">⚠️ <strong>Firefox:</strong> Limited support</div>';
+                content += '<div style="font-size: 12px; opacity: 0.9;">• Speech Recognition: May need enabling<br>• Voice Synthesis: ✅<br>• Type <code>about:config</code> and enable <code>media.webspeech.recognition.enable</code></div>';
+            } else if (browserInfo.isSafari) {
+                content += '<div style="margin-bottom: 8px;">⚠️ <strong>Safari:</strong> Partial support</div>';
+                content += '<div style="font-size: 12px; opacity: 0.9;">• Speech Recognition: Limited<br>• Voice Synthesis: ✅<br>• Best experience in iOS 14.5+</div>';
+            } else {
+                content += '<div style="margin-bottom: 8px;">❓ <strong>Other Browser</strong></div>';
+                content += '<div style="font-size: 12px; opacity: 0.9;">• For best experience, use Chrome or Edge<br>• Some features may not work</div>';
+            }
+            
+            guidance.innerHTML = content;
+            document.body.appendChild(guidance);
+            
+            // Animate in
+            setTimeout(() => {
+                guidance.style.opacity = '1';
+                guidance.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // Auto-hide after 8 seconds
+            setTimeout(() => {
+                if (document.body.contains(guidance)) {
+                    guidance.style.opacity = '0';
+                    guidance.style.transform = 'translateX(100%)';
+                    setTimeout(() => guidance.remove(), 300);
+                }
+            }, 8000);
+        }
+
+        // Feature detection and capability reporting
+        function checkFeatureSupport() {
+            const features = {
+                speechRecognition: !!(window.SpeechRecognition || window.webkitSpeechRecognition),
+                speechSynthesis: !!window.speechSynthesis,
+                mediaDevices: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
+                audioContext: !!(window.AudioContext || window.webkitAudioContext),
+                webAudio: 'AudioContext' in window || 'webkitAudioContext' in window
+            };
+            
+            console.log('🔍 Feature Support:', features);
+            
+            // Show warnings for missing features
+            if (!features.speechRecognition) {
+                updateSTTStatus('idle', 'Speech Recognition not supported');
+            }
+            
+            if (!features.speechSynthesis) {
+                updateTTSStatus('idle', 'Speech Synthesis not supported');
+            }
+            
+            if (!features.mediaDevices) {
+                console.warn('⚠️ Media Devices API not available');
+            }
+            
+            return features;
+        }
+
+        // Initialize feature support checking
+        const supportedFeatures = checkFeatureSupport();
+        
+        // Show browser guidance on page load
+        setTimeout(showBrowserGuidance, 2000);
 
         // Check if we're running on the correct Python backend server
         async function checkServerType() {
@@ -881,9 +1272,48 @@
         cleanupTempFiles();
         window.addEventListener('beforeunload', cleanupTempFiles);
 
-        // Initial status
-        updateSTTStatus('idle', 'Ready to Listen');
-        updateTTSStatus('idle', 'Ready to Speak');
+        // Final initialization and compatibility summary
+        function initializeApp() {
+            console.log('🚀 Initializing Speech Processing Suite...');
+            console.log('📊 Browser Compatibility Summary:', {
+                browser: browserInfo,
+                features: supportedFeatures,
+                speechRecognitionReady: !!recognition,
+                voicesLoaded: voicesLoaded,
+                availableVoicesCount: availableVoices.length
+            });
+            
+            // Set initial status messages
+            if (supportedFeatures.speechRecognition && recognition) {
+                updateSTTStatus('idle', 'Ready to Listen');
+            } else {
+                updateSTTStatus('idle', 'Speech Recognition unavailable');
+            }
+            
+            if (supportedFeatures.speechSynthesis) {
+                updateTTSStatus('idle', 'Ready to Speak');
+            } else {
+                updateTTSStatus('idle', 'Speech Synthesis unavailable');
+            }
+            
+            // Log final compatibility status
+            const compatibilityScore = [
+                supportedFeatures.speechRecognition ? 25 : 0,
+                supportedFeatures.speechSynthesis ? 25 : 0,
+                supportedFeatures.mediaDevices ? 25 : 0,
+                (browserInfo.isChrome || browserInfo.isEdge) ? 25 : 
+                (browserInfo.isFirefox || browserInfo.isSafari) ? 15 : 5
+            ].reduce((a, b) => a + b, 0);
+            
+            console.log(`✨ App initialized with ${compatibilityScore}% compatibility`);
+            
+            if (compatibilityScore < 50) {
+                console.warn('⚠️ Low compatibility detected. Some features may not work properly.');
+            }
+        }
+        
+        // Initialize the app
+        setTimeout(initializeApp, 1000);
     </script>
 </body>
 </html>

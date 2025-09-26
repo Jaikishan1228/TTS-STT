@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser Compatibility Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section { 
+            background: white; 
+            margin: 20px 0; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status { 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 4px; 
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        #results { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Browser Compatibility Test Suite</h1>
+    <p>This page tests the browser compatibility fixes for the STT & TTS application.</p>
+    
+    <div class="test-section">
+        <h2>🌐 Browser Detection</h2>
+        <div id="browser-info"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🎤 Speech Recognition Tests</h2>
+        <div id="stt-status"></div>
+        <button id="test-stt-permission">Test Microphone Permission</button>
+        <button id="test-stt-basic">Test Basic Recognition</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>🗣️ Speech Synthesis Tests</h2>
+        <div id="tts-status"></div>
+        <button id="test-tts-basic">Test Basic Speech</button>
+        <button id="test-tts-voices">Test Voice Loading</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔧 Feature Support</h2>
+        <div id="feature-support"></div>
+    </div>
+    
+    <div id="results" class="test-section">
+        <h2>📊 Test Results</h2>
+        <div id="test-log"></div>
+    </div>
+
+    <script>
+        // Test results storage
+        const testResults = [];
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            testResults.push({ message: logEntry, type });
+            
+            const logDiv = document.getElementById('test-log');
+            const entry = document.createElement('div');
+            entry.className = `status ${type === 'success' ? 'success' : type === 'error' ? 'error' : 'warning'}`;
+            entry.textContent = logEntry;
+            logDiv.appendChild(entry);
+            
+            console.log(logEntry);
+        }
+        
+        // Browser detection test
+        function detectBrowser() {
+            const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+            const isEdge = /Edg/.test(navigator.userAgent);
+            const isFirefox = /Firefox/.test(navigator.userAgent);
+            const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+            
+            let browserName = 'Unknown';
+            if (isChrome) browserName = 'Chrome';
+            else if (isEdge) browserName = 'Edge';
+            else if (isFirefox) browserName = 'Firefox';
+            else if (isSafari) browserName = 'Safari';
+            
+            document.getElementById('browser-info').innerHTML = `
+                <div class="status success">
+                    <strong>Browser:</strong> ${browserName}<br>
+                    <strong>User Agent:</strong> ${navigator.userAgent}<br>
+                    <strong>Platform:</strong> ${navigator.platform}
+                </div>
+            `;
+            
+            log(`Browser detected: ${browserName}`, 'success');
+            return { isChrome, isEdge, isFirefox, isSafari, browserName };
+        }
+        
+        // Feature support test
+        function testFeatureSupport() {
+            const features = {
+                speechRecognition: !!(window.SpeechRecognition || window.webkitSpeechRecognition),
+                speechSynthesis: !!window.speechSynthesis,
+                mediaDevices: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
+                audioContext: !!(window.AudioContext || window.webkitAudioContext),
+                webAudio: 'AudioContext' in window || 'webkitAudioContext' in window
+            };
+            
+            let html = '';
+            Object.keys(features).forEach(feature => {
+                const supported = features[feature];
+                html += `<div class="status ${supported ? 'success' : 'error'}">
+                    ${feature}: ${supported ? '✅ Supported' : '❌ Not Supported'}
+                </div>`;
+                log(`${feature}: ${supported ? 'Supported' : 'Not Supported'}`, supported ? 'success' : 'error');
+            });
+            
+            document.getElementById('feature-support').innerHTML = html;
+            return features;
+        }
+        
+        // STT Permission test
+        async function testSTTPermission() {
+            try {
+                log('Testing microphone permission...', 'info');
+                
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                    document.getElementById('stt-status').innerHTML = 
+                        '<div class="status success">✅ Microphone permission granted</div>';
+                    log('Microphone permission: Granted', 'success');
+                } else {
+                    throw new Error('MediaDevices API not available');
+                }
+            } catch (error) {
+                document.getElementById('stt-status').innerHTML = 
+                    `<div class="status error">❌ Microphone permission denied: ${error.message}</div>`;
+                log(`Microphone permission: Denied - ${error.message}`, 'error');
+            }
+        }
+        
+        // Basic STT test
+        function testBasicSTT() {
+            log('Testing Speech Recognition initialization...', 'info');
+            
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                try {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    const recognition = new SpeechRecognition();
+                    
+                    recognition.continuous = true;
+                    recognition.interimResults = true;
+                    recognition.lang = 'en-US';
+                    
+                    document.getElementById('stt-status').innerHTML = 
+                        '<div class="status success">✅ Speech Recognition initialized successfully</div>';
+                    log('Speech Recognition: Initialized successfully', 'success');
+                    
+                } catch (error) {
+                    document.getElementById('stt-status').innerHTML = 
+                        `<div class="status error">❌ Speech Recognition initialization failed: ${error.message}</div>`;
+                    log(`Speech Recognition: Failed - ${error.message}`, 'error');
+                }
+            } else {
+                document.getElementById('stt-status').innerHTML = 
+                    '<div class="status error">❌ Speech Recognition not supported</div>';
+                log('Speech Recognition: Not supported in this browser', 'error');
+            }
+        }
+        
+        // Basic TTS test
+        function testBasicTTS() {
+            log('Testing Speech Synthesis...', 'info');
+            
+            if (window.speechSynthesis) {
+                try {
+                    const utterance = new SpeechSynthesisUtterance('Testing speech synthesis');
+                    utterance.rate = 1.0;
+                    utterance.volume = 0.5;
+                    
+                    utterance.onstart = () => {
+                        document.getElementById('tts-status').innerHTML = 
+                            '<div class="status success">✅ Speech Synthesis working</div>';
+                        log('Speech Synthesis: Test speech started', 'success');
+                    };
+                    
+                    utterance.onerror = (event) => {
+                        document.getElementById('tts-status').innerHTML = 
+                            `<div class="status error">❌ Speech Synthesis error: ${event.error}</div>`;
+                        log(`Speech Synthesis: Error - ${event.error}`, 'error');
+                    };
+                    
+                    speechSynthesis.speak(utterance);
+                    
+                } catch (error) {
+                    document.getElementById('tts-status').innerHTML = 
+                        `<div class="status error">❌ Speech Synthesis failed: ${error.message}</div>`;
+                    log(`Speech Synthesis: Failed - ${error.message}`, 'error');
+                }
+            } else {
+                document.getElementById('tts-status').innerHTML = 
+                    '<div class="status error">❌ Speech Synthesis not supported</div>';
+                log('Speech Synthesis: Not supported in this browser', 'error');
+            }
+        }
+        
+        // Voice loading test
+        function testVoiceLoading() {
+            log('Testing voice loading...', 'info');
+            
+            let attempts = 0;
+            const maxAttempts = 10;
+            
+            function checkVoices() {
+                attempts++;
+                const voices = speechSynthesis.getVoices();
+                
+                if (voices.length > 0) {
+                    document.getElementById('tts-status').innerHTML = `
+                        <div class="status success">
+                            ✅ Loaded ${voices.length} voices<br>
+                            <small>Sample voices: ${voices.slice(0, 3).map(v => v.name).join(', ')}</small>
+                        </div>
+                    `;
+                    log(`Voice loading: Success - ${voices.length} voices loaded`, 'success');
+                    
+                    // Test voice matching
+                    const englishVoices = voices.filter(v => v.lang.startsWith('en'));
+                    log(`English voices available: ${englishVoices.length}`, 'info');
+                    
+                } else if (attempts < maxAttempts) {
+                    setTimeout(checkVoices, 500);
+                } else {
+                    document.getElementById('tts-status').innerHTML = 
+                        '<div class="status warning">⚠️ No voices loaded after maximum attempts</div>';
+                    log('Voice loading: Failed - No voices loaded', 'warning');
+                }
+            }
+            
+            // Listen for voice changes
+            speechSynthesis.onvoiceschanged = checkVoices;
+            checkVoices();
+        }
+        
+        // Initialize tests
+        document.addEventListener('DOMContentLoaded', function() {
+            log('Starting browser compatibility test suite...', 'info');
+            
+            // Run automatic tests
+            const browserInfo = detectBrowser();
+            const features = testFeatureSupport();
+            
+            // Setup button handlers
+            document.getElementById('test-stt-permission').onclick = testSTTPermission;
+            document.getElementById('test-stt-basic').onclick = testBasicSTT;
+            document.getElementById('test-tts-basic').onclick = testBasicTTS;
+            document.getElementById('test-tts-voices').onclick = testVoiceLoading;
+            
+            // Auto-run some tests
+            setTimeout(() => {
+                testBasicSTT();
+                testVoiceLoading();
+            }, 1000);
+            
+            log('Test suite initialized', 'success');
+        });
+    </script>
+</body>
+</html>

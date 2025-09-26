@@ -63,7 +63,8 @@ class TTSHandler(BaseHTTPRequestHandler):
             # Clean up temporary files
             self.handle_cleanup_request()
         else:
-            self.send_error(404, "Not Found")
+            # Try to serve static files (CSS, JS, images, etc.)
+            self.serve_static_file(parsed_path.path)
     
     def send_test_response(self):
         """Send a test response to verify the server is working"""
@@ -97,6 +98,70 @@ class TTSHandler(BaseHTTPRequestHandler):
         else:
             self.send_error(404, "Not Found")
     
+    def serve_static_file(self, path):
+        """Serve static files (CSS, JS, images, etc.)"""
+        # Remove leading slash
+        file_path = path.lstrip('/')
+        
+        # Security check - prevent directory traversal
+        if '..' in file_path or file_path.startswith('/'):
+            self.send_error(403, "Forbidden")
+            return
+        
+        # Check if file exists
+        if not os.path.exists(file_path):
+            self.send_error(404, "File not found")
+            return
+        
+        try:
+            # Determine content type based on file extension
+            content_types = {
+                '.html': 'text/html; charset=utf-8',
+                '.css': 'text/css; charset=utf-8',
+                '.js': 'application/javascript; charset=utf-8',
+                '.png': 'image/png',
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.gif': 'image/gif',
+                '.svg': 'image/svg+xml',
+                '.ico': 'image/x-icon',
+                '.woff': 'font/woff',
+                '.woff2': 'font/woff2',
+                '.ttf': 'font/ttf',
+                '.eot': 'application/vnd.ms-fontobject',
+                '.mp3': 'audio/mpeg',
+                '.wav': 'audio/wav',
+                '.ogg': 'audio/ogg'
+            }
+            
+            file_ext = os.path.splitext(file_path)[1].lower()
+            content_type = content_types.get(file_ext, 'application/octet-stream')
+            
+            # Read file content
+            mode = 'rb' if content_type.startswith(('image/', 'audio/', 'font/')) or 'octet-stream' in content_type else 'r'
+            encoding = None if mode == 'rb' else 'utf-8'
+            
+            with open(file_path, mode, encoding=encoding) as f:
+                content = f.read()
+            
+            # Send response
+            self.send_response(200)
+            self.send_header('Content-Type', content_type)
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Cache-Control', 'public, max-age=3600')  # Cache for 1 hour
+            self.end_headers()
+            
+            if isinstance(content, str):
+                self.wfile.write(content.encode('utf-8'))
+            else:
+                self.wfile.write(content)
+                
+            print(f"📁 Served static file: {file_path} ({content_type})")
+            
+        except Exception as e:
+            print(f"❌ Error serving static file {file_path}: {str(e)}")
+            self.send_error(500, f"Server error: {str(e)}")
+
     def serve_html_file(self):
         """Serve the main HTML interface"""
         try:
