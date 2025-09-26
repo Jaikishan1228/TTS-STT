@@ -201,6 +201,10 @@
                     <i class="fas fa-vial"></i>
                     Test Voice
                 </button>
+                <button id="cycle_voices" class="btn btn-info" style="display: none;">
+                    <i class="fas fa-random"></i>
+                    Cycle Voices
+                </button>
             </div>
         </div>
     </div>
@@ -239,6 +243,7 @@
         const saveAudioBtn = document.getElementById('save_audio');
         const useTranscriptBtn = document.getElementById('use_transcript');
         const testVoiceBtn = document.getElementById('test_voice');
+        const cycleVoicesBtn = document.getElementById('cycle_voices');
 
         // Enhanced browser compatibility check with mobile detection
         function checkBrowserSupport() {
@@ -648,98 +653,87 @@
                 console.log(`🔍 Looking for voice: ${selectedVoice} (${targetLang}, ${preferredGender}, ${voiceName})`);
                 console.log(`🎤 Available voices (${voices.length}):`, voices.map(v => `${v.name} (${v.lang})`));
                 
-                // Android-specific voice handling with better selection
+                // Detailed Android voice analysis
+                if (browserInfo.isAndroid && voices.length > 10) {
+                    console.log('🤖 Android Voice Analysis:');
+                    const voiceAnalysis = voices.map(voice => ({
+                        name: voice.name,
+                        lang: voice.lang,
+                        default: voice.default,
+                        localService: voice.localService,
+                        voiceURI: voice.voiceURI
+                    }));
+                    console.table(voiceAnalysis);
+                }
+                
+                // Android-specific voice handling - Direct approach for 87 voices
                 if (browserInfo.isAndroid) {
-                    console.log('🤖 Android detected - Enhanced voice selection');
-                    console.log(`🤖 Requested voice: ${selectedVoice}, Target: ${targetLang}, Gender: ${preferredGender}`);
+                    console.log('🤖 Android detected - Direct voice selection from 87 voices');
+                    console.log(`🤖 Requested: ${selectedVoice} → Target: ${targetLang}, Gender: ${preferredGender}, Name: ${voiceName}`);
                     
-                    // First, try to find exact or close matches
-                    voices.forEach(voice => {
-                        let score = 0;
-                        const sysVoiceName = voice.name.toLowerCase();
-                        const sysVoiceLang = voice.lang;
-                        
-                        // Language matching
-                        if (sysVoiceLang === targetLang) {
-                            score += 100;
-                        } else if (sysVoiceLang.startsWith(targetLang.split('-')[0])) {
-                            score += 70;
-                        } else if (sysVoiceLang.startsWith('en')) {
-                            score += 30;
+                    // Strategy 1: Try exact name matching first
+                    if (voiceName) {
+                        const exactNameMatch = voices.find(voice => 
+                            voice.name.toLowerCase().includes(voiceName.toLowerCase())
+                        );
+                        if (exactNameMatch) {
+                            console.log(`🤖 ✅ Exact name match: ${exactNameMatch.name} (${exactNameMatch.lang})`);
+                            return exactNameMatch;
                         }
-                        
-                        // Gender matching for Android
-                        const isMaleVoice = maleVoices.some(male => sysVoiceName.includes(male)) ||
-                                           sysVoiceName.includes('male') || sysVoiceName.includes('man');
-                        const isFemaleVoice = femaleVoices.some(female => sysVoiceName.includes(female)) ||
-                                             sysVoiceName.includes('female') || sysVoiceName.includes('woman');
-                        
-                        if (preferredGender === 'male' && isMaleVoice) {
-                            score += 50;
-                        } else if (preferredGender === 'female' && isFemaleVoice) {
-                            score += 50;
-                        }
-                        
-                        // Bonus for Google/Android voices
-                        if (sysVoiceName.includes('google') || sysVoiceName.includes('android')) {
-                            score += 20;
-                        }
-                        
-                        // Name matching bonus
-                        if (voiceName && sysVoiceName.includes(voiceName)) {
-                            score += 80;
-                        }
-                        
-                        console.log(`  🤖 ${voice.name} (${voice.lang}): score ${score}`);
-                        
-                        if (score > bestScore) {
-                            bestScore = score;
-                            bestVoice = voice;
-                        }
-                    });
-                    
-                    // If we found a decent match, use it
-                    if (bestVoice && bestScore >= 30) {
-                        console.log(`🤖 Android voice selected: ${bestVoice.name} (${bestVoice.lang}) - Score: ${bestScore}`);
-                        return bestVoice;
                     }
                     
-                    // Fallback strategy - be more flexible with Android limitations
-                    console.log('🤖 Using Android fallback strategy...');
-                    
-                    // Try to get a voice that matches the requested gender at least
-                    const genderMatchedVoice = voices.find(voice => {
+                    // Strategy 2: Language + Gender combination
+                    const langGenderMatches = voices.filter(voice => {
+                        const matchesLang = voice.lang === targetLang || voice.lang.startsWith(targetLang.split('-')[0]);
                         const name = voice.name.toLowerCase();
-                        if (preferredGender === 'male') {
-                            return maleVoices.some(male => name.includes(male)) || name.includes('male');
-                        } else {
-                            return femaleVoices.some(female => name.includes(female)) || name.includes('female');
-                        }
+                        const matchesGender = preferredGender === 'male' ? 
+                            (maleVoices.some(male => name.includes(male)) || name.includes('male') || name.includes('man')) :
+                            (femaleVoices.some(female => name.includes(female)) || name.includes('female') || name.includes('woman'));
+                        return matchesLang && matchesGender;
                     });
                     
-                    if (genderMatchedVoice) {
-                        console.log(`🤖 Android gender-matched voice: ${genderMatchedVoice.name} (${genderMatchedVoice.lang})`);
-                        return genderMatchedVoice;
+                    if (langGenderMatches.length > 0) {
+                        // Pick the first good match or prefer Google/Android voices
+                        const preferredMatch = langGenderMatches.find(voice => 
+                            voice.name.toLowerCase().includes('google') || 
+                            voice.name.toLowerCase().includes('android')
+                        ) || langGenderMatches[0];
+                        
+                        console.log(`🤖 ✅ Lang+Gender match: ${preferredMatch.name} (${preferredMatch.lang})`);
+                        console.log(`🤖 Other options (${langGenderMatches.length}):`, langGenderMatches.map(v => v.name));
+                        return preferredMatch;
                     }
                     
-                    // Try language-matched voice
-                    const langMatchedVoice = voices.find(v => 
-                        v.lang === targetLang || v.lang.startsWith(targetLang.split('-')[0])
+                    // Strategy 3: Just language matching
+                    const langMatches = voices.filter(voice => 
+                        voice.lang === targetLang || voice.lang.startsWith(targetLang.split('-')[0])
                     );
                     
-                    if (langMatchedVoice) {
-                        console.log(`🤖 Android language-matched voice: ${langMatchedVoice.name} (${langMatchedVoice.lang})`);
-                        return langMatchedVoice;
+                    if (langMatches.length > 0) {
+                        console.log(`🤖 ✅ Language match: ${langMatches[0].name} (${langMatches[0].lang})`);
+                        console.log(`🤖 Lang options (${langMatches.length}):`, langMatches.map(v => v.name));
+                        return langMatches[0];
                     }
                     
-                    // Last resort
-                    if (voices.length > 0) {
-                        console.log(`🤖 Android last resort: ${voices[0].name} (${voices[0].lang})`);
-                        return voices[0];
+                    // Strategy 4: Gender matching only
+                    const genderMatches = voices.filter(voice => {
+                        const name = voice.name.toLowerCase();
+                        return preferredGender === 'male' ? 
+                            (maleVoices.some(male => name.includes(male)) || name.includes('male') || name.includes('man')) :
+                            (femaleVoices.some(female => name.includes(female)) || name.includes('female') || name.includes('woman'));
+                    });
+                    
+                    if (genderMatches.length > 0) {
+                        console.log(`🤖 ✅ Gender match: ${genderMatches[0].name} (${genderMatches[0].lang})`);
+                        console.log(`🤖 Gender options (${genderMatches.length}):`, genderMatches.map(v => v.name));
+                        return genderMatches[0];
                     }
                     
-                    console.log('🤖 Android: No voices available');
-                    return null;
+                    // Strategy 5: Use a different voice each time (round-robin for testing)
+                    const voiceIndex = Math.floor(Math.random() * Math.min(voices.length, 10)); // Random from first 10
+                    const randomVoice = voices[voiceIndex];
+                    console.log(`🤖 ✅ Random voice (${voiceIndex}): ${randomVoice.name} (${randomVoice.lang})`);
+                    return randomVoice;
                 }
                 
                 voices.forEach(voice => {
@@ -848,47 +842,49 @@
             
             if (bestVoice) {
                 currentUtterance.voice = bestVoice;
-                console.log(`🎤 Using voice: ${bestVoice.name} (${bestVoice.lang}) for ${selectedVoice}`);
+                console.log(`🎤 SELECTED VOICE: ${bestVoice.name} (${bestVoice.lang}) for request: ${selectedVoice}`);
+                
+                // Verify the voice was actually set
+                setTimeout(() => {
+                    if (currentUtterance.voice) {
+                        console.log(`✅ Voice confirmed set: ${currentUtterance.voice.name}`);
+                    } else {
+                        console.warn('⚠️ Voice was not set properly');
+                    }
+                }, 100);
                 
                 // Android-specific voice information
                 if (browserInfo.isAndroid) {
-                    console.log('🤖 Android voice system detected');
+                    console.log(`🤖 Android voice system: ${voices.length} total voices available`);
+                    console.log(`🤖 ACTUALLY USING: ${bestVoice.name} (${bestVoice.lang})`);
+                    
+                    // Show quick notification with actual voice being used
+                    const quickNotice = document.createElement('div');
+                    quickNotice.style.cssText = `
+                        position: fixed;
+                        top: 80px;
+                        right: 20px;
+                        background: #28a745;
+                        color: white;
+                        padding: 8px 15px;
+                        border-radius: 4px;
+                        font-size: 13px;
+                        z-index: 10000;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                        max-width: 300px;
+                    `;
+                    quickNotice.innerHTML = `🎤 Using: ${bestVoice.name}`;
+                    document.body.appendChild(quickNotice);
+                    
                     setTimeout(() => {
-                        const notice = document.createElement('div');
-                        notice.style.cssText = `
-                            position: fixed;
-                            bottom: 20px;
-                            left: 50%;
-                            transform: translateX(-50%);
-                            background: #17a2b8;
-                            color: white;
-                            padding: 12px 20px;
-                            border-radius: 6px;
-                            font-size: 14px;
-                            max-width: 380px;
-                            text-align: center;
-                            z-index: 10000;
-                            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                        `;
-                        
-                        const availableVoiceNames = voices.map(v => v.name).join(', ');
-                        const voiceCount = voices.length;
-                        
-                        notice.innerHTML = `
-                            📱 <strong>Android TTS:</strong> ${voiceCount} system voice${voiceCount !== 1 ? 's' : ''} available<br>
-                            <small>Using: ${bestVoice.name}</small><br>
-                            <button onclick="this.parentElement.remove()" style="margin-top: 8px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 4px 8px; border-radius: 3px; cursor: pointer;">OK</button>
-                            <button onclick="console.log('Available Android voices:', ${JSON.stringify(voices.map(v => ({name: v.name, lang: v.lang})))}); alert('Check console for voice details')" style="margin-top: 8px; margin-left: 5px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 4px 8px; border-radius: 3px; cursor: pointer;">Debug</button>
-                        `;
-                        document.body.appendChild(notice);
-                        
-                        setTimeout(() => {
-                            if (document.body.contains(notice)) {
-                                notice.remove();
-                            }
-                        }, 10000);
-                    }, 2000);
+                        if (document.body.contains(quickNotice)) {
+                            quickNotice.remove();
+                        }
+                    }, 4000);
                 }
+            } else {
+                console.error('❌ No voice could be selected!');
+                updateTTSStatus('idle', 'No suitable voice found');
             }
 
             currentUtterance.onstart = function() {
@@ -1376,6 +1372,48 @@
             speechSynthesis.speak(testUtterance);
         });
 
+        // Voice cycling feature for Android to test different voices
+        let currentVoiceIndex = 0;
+        cycleVoicesBtn.addEventListener('click', function() {
+            const voices = speechSynthesis.getVoices();
+            if (voices.length === 0) {
+                updateTTSStatus('idle', 'No voices available');
+                return;
+            }
+            
+            // Use a subset of voices for cycling (first 20 to avoid overwhelming)
+            const cyclableVoices = voices.slice(0, Math.min(20, voices.length));
+            const voice = cyclableVoices[currentVoiceIndex];
+            currentVoiceIndex = (currentVoiceIndex + 1) % cyclableVoices.length;
+            
+            const testText = `Voice ${currentVoiceIndex}: ${voice.name}`;
+            console.log(`🔄 Cycling to voice ${currentVoiceIndex}: ${voice.name} (${voice.lang})`);
+            
+            const utterance = new SpeechSynthesisUtterance(testText);
+            utterance.voice = voice;
+            utterance.rate = 1.0;
+            utterance.volume = 0.8;
+            
+            utterance.onstart = () => {
+                updateTTSStatus('processing', `Testing: ${voice.name}`);
+                cycleVoicesBtn.disabled = true;
+            };
+            
+            utterance.onend = () => {
+                updateTTSStatus('success', `Voice ${currentVoiceIndex}/${cyclableVoices.length}: ${voice.name}`);
+                cycleVoicesBtn.disabled = false;
+                setTimeout(() => updateTTSStatus('idle', 'Ready to Speak'), 3000);
+            };
+            
+            utterance.onerror = (event) => {
+                updateTTSStatus('idle', `Error with voice: ${voice.name}`);
+                cycleVoicesBtn.disabled = false;
+                console.error('🔄 Voice cycle error:', event.error);
+            };
+            
+            speechSynthesis.speak(utterance);
+        });
+
         // Comprehensive browser compatibility check and user guidance
         function showBrowserGuidance() {
             const guidance = document.createElement('div');
@@ -1585,10 +1623,11 @@
                 console.warn('⚠️ Low compatibility detected. Some features may not work properly.');
             }
             
-            // Show test voice button for Android users
+            // Show test voice and cycle buttons for Android users
             if (browserInfo.isAndroid && supportedFeatures.speechSynthesis) {
                 testVoiceBtn.style.display = 'inline-block';
-                console.log('🤖 Test voice button enabled for Android');
+                cycleVoicesBtn.style.display = 'inline-block';
+                console.log('🤖 Test voice and cycle buttons enabled for Android');
             }
         }
         
