@@ -33,15 +33,15 @@ class handler(BaseHTTPRequestHandler):
             with tempfile.NamedTemporaryFile(suffix='.mp3', delete=False) as temp_file:
                 temp_path = temp_file.name
             
-            # Generate audio using edge-tts
+            # Generate audio using edge-tts with timeout
             cmd = [
                 'edge-tts',
                 '--voice', voice,
-                '--text', text,
+                '--text', text[:1000],  # Limit text length for serverless
                 '--write-media', temp_path
             ]
             
-            result = subprocess.run(cmd, capture_output=True, text=True)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
             
             if result.returncode == 0 and os.path.exists(temp_path):
                 # Read audio file and encode as base64

@@ -34,26 +34,33 @@ A modern, full-featured web application that combines **Speech-to-Text (STT)** a
 
 ## 🚀 Quick Start
 
-### Local Development
+### Local Development (Full Features)
 ```bash
 # Clone the repository
 git clone https://github.com/Jaikishan1228/TTS-STT.git
 cd TTS-STT
 
-# Install dependencies
-pip install -r requirements.txt
+# Install ALL dependencies for local development
+pip install -r requirements-local.txt
 
-# Start the server
+# Start the local server
 python tts_backend.py
 
 # Open http://localhost:8000
+```
+
+### Quick Setup (TTS Only)
+```bash
+# For basic TTS functionality only
+pip install -r requirements.txt
+python tts_backend.py
 ```
 
 ### 🚀 Deploy to Vercel (Production)
 ```bash
 # 1. Push your code to GitHub
 git add .
-git commit -m "Initial commit"
+git commit -m "Fix Vercel deployment"
 git push origin main
 
 # 2. Go to https://vercel.com/new
@@ -61,6 +68,8 @@ git push origin main
 # 4. Deploy automatically (no configuration needed)
 # 5. Your app will be live at: https://your-app-name.vercel.app
 ```
+
+> **Note**: Vercel deployment uses a minimal `requirements.txt` with only `edge-tts` for TTS functionality. Full STT features (microphone recording) work through the browser's Web Speech API, requiring no server-side dependencies.
 
 ## 🎯 How It Works
 

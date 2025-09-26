@@ -1,0 +1,22 @@
+# Complete Dependencies for Local Development
+# Use this file for full local development with all features
+
+# === Core TTS Engine ===
+edge-tts>=6.1.0
+
+# === Text-to-Speech (Local) ===
+pygame>=2.5.0
+
+# === Speech Recognition (Local) ===
+SpeechRecognition>=3.10.0
+pyaudio>=0.2.11
+
+# === Web-based STT (Optional) ===
+selenium>=4.15.0
+webdriver-manager>=4.0.0
+
+# === Offline Recognition (Optional) ===
+pocketsphinx>=5.0.0
+
+# === Utilities ===
+requests>=2.31.0
