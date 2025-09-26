@@ -322,7 +322,8 @@
                 let finalTranscript = '';
                 let interimTranscript = '';
 
-                for (let i = event.resultIndex; i < event.results.length; i++) {
+                // Process all results to build complete transcript
+                for (let i = 0; i < event.results.length; i++) {
                     const transcript = event.results[i][0].transcript;
                     if (event.results[i].isFinal) {
                         finalTranscript += transcript + ' ';
@@ -334,12 +335,28 @@
                 // Clear placeholder text first
                 if (transcriptArea.textContent === 'Your speech will appear here...') {
                     transcriptArea.textContent = '';
+                    transcriptArea.dataset.finalText = '';
                 }
 
-                // Update transcript display with both final and interim results
-                const existingFinalText = transcriptArea.dataset.finalText || '';
-                transcriptArea.dataset.finalText = existingFinalText + finalTranscript;
-                transcriptArea.textContent = transcriptArea.dataset.finalText + interimTranscript;
+                // Initialize final text if not set
+                if (!transcriptArea.dataset.finalText) {
+                    transcriptArea.dataset.finalText = '';
+                }
+
+                // Only add new final text (avoid duplication)
+                if (finalTranscript.trim()) {
+                    // Check if this final text is already included
+                    const currentFinalText = transcriptArea.dataset.finalText;
+                    const newFinalText = finalTranscript.trim();
+                    
+                    if (!currentFinalText.includes(newFinalText)) {
+                        transcriptArea.dataset.finalText = currentFinalText + finalTranscript;
+                    }
+                }
+
+                // Display final + interim text
+                const displayText = (transcriptArea.dataset.finalText || '') + interimTranscript;
+                transcriptArea.textContent = displayText;
                 
                 // Auto-scroll to bottom
                 transcriptArea.scrollTop = transcriptArea.scrollHeight;
@@ -432,15 +449,17 @@
                 updateSTTStatus('success', 'Transcription completed');
                 resetRecording();
                 
-                // Show final result
-                const finalText = transcriptArea.dataset.finalText || transcriptArea.textContent;
+                // Show final result and clean up
+                const finalText = transcriptArea.dataset.finalText || '';
                 if (finalText && finalText !== 'Your speech will appear here...') {
                     transcriptArea.textContent = finalText.trim();
-                    console.log('📝 Final transcript:', finalText.trim());
+                    debugLog('📝 Final transcript:', finalText.trim());
                 }
                 
                 setTimeout(() => updateSTTStatus('idle', 'Ready to Listen'), 2000);
             };
+
+
         } else {
             let errorMessage = 'Speech Recognition not supported in this browser';
             if (browserInfo.isFirefox) {
