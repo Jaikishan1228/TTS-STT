@@ -26,6 +26,7 @@ A modern, full-featured web application that combines **Speech-to-Text (STT)** a
 
 🔧 **Browser Compatibility**
 - Enhanced cross-browser support (Chrome, Edge, Firefox, Safari)
+- Dynamic voice detection for mobile/Android devices
 - Automatic feature detection and fallbacks
 - Intelligent error handling with user guidance
 - Browser-specific optimizations for best performance

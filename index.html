@@ -235,22 +235,45 @@
         const saveAudioBtn = document.getElementById('save_audio');
         const useTranscriptBtn = document.getElementById('use_transcript');
 
-        // Browser compatibility check
+        // Enhanced browser compatibility check with mobile detection
         function checkBrowserSupport() {
-            const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
-            const isEdge = /Edg/.test(navigator.userAgent);
-            const isFirefox = /Firefox/.test(navigator.userAgent);
-            const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+            const userAgent = navigator.userAgent;
+            const isChrome = /Chrome/.test(userAgent) && /Google Inc/.test(navigator.vendor);
+            const isEdge = /Edg/.test(userAgent);
+            const isFirefox = /Firefox/.test(userAgent);
+            const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
             
-            console.log('🌐 Browser detected:', {
+            // Mobile device detection
+            const isAndroid = /Android/.test(userAgent);
+            const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+            const isMobile = /Mobile|Android|iPhone|iPad/.test(userAgent);
+            
+            // Android-specific browser detection
+            const isAndroidChrome = isAndroid && isChrome;
+            const isAndroidFirefox = isAndroid && isFirefox;
+            const isAndroidSamsung = isAndroid && /SamsungBrowser/.test(userAgent);
+            const isAndroidWebView = isAndroid && /wv/.test(userAgent);
+            
+            console.log('🌐 Browser & Device detected:', {
                 chrome: isChrome,
                 edge: isEdge,
                 firefox: isFirefox,
                 safari: isSafari,
-                userAgent: navigator.userAgent
+                android: isAndroid,
+                iOS: isIOS,
+                mobile: isMobile,
+                androidChrome: isAndroidChrome,
+                androidFirefox: isAndroidFirefox,
+                androidSamsung: isAndroidSamsung,
+                androidWebView: isAndroidWebView,
+                userAgent: userAgent
             });
             
-            return { isChrome, isEdge, isFirefox, isSafari };
+            return { 
+                isChrome, isEdge, isFirefox, isSafari, 
+                isAndroid, isIOS, isMobile,
+                isAndroidChrome, isAndroidFirefox, isAndroidSamsung, isAndroidWebView
+            };
         }
 
         const browserInfo = checkBrowserSupport();
@@ -269,7 +292,13 @@
                     recognition.maxAlternatives = 1;
                     
                     // Browser-specific optimizations
-                    if (browserInfo.isChrome || browserInfo.isEdge) {
+                    if (browserInfo.isAndroid) {
+                        // Android browsers need special handling
+                        recognition.continuous = false; // Android works better with single recognition
+                        recognition.interimResults = true;
+                        recognition.maxAlternatives = 1;
+                        console.log('🤖 Android optimization: Single recognition mode');
+                    } else if (browserInfo.isChrome || browserInfo.isEdge) {
                         recognition.continuous = true;
                         recognition.interimResults = true;
                     } else if (browserInfo.isFirefox) {
@@ -605,7 +634,7 @@
                 preferredGender = maleVoices.some(name => selectedVoice.toLowerCase().includes(name)) ? 'male' : 'female';
             }
             
-            // Enhanced voice matching with better browser compatibility
+            // Enhanced voice matching with Android-specific handling
             function findBestVoice(voices, selectedVoice, targetLang, preferredGender, voiceName) {
                 let bestVoice = null;
                 let bestScore = -1;
@@ -613,6 +642,55 @@
                 
                 console.log(`🔍 Looking for voice: ${selectedVoice} (${targetLang}, ${preferredGender}, ${voiceName})`);
                 console.log(`🎤 Available voices (${voices.length}):`, voices.map(v => `${v.name} (${v.lang})`));
+                
+                // Android-specific voice handling
+                if (browserInfo.isAndroid) {
+                    console.log('🤖 Android detected - Using simplified voice selection');
+                    
+                    // Android typically has very limited voices, often just system defaults
+                    const androidVoices = voices.filter(voice => {
+                        const name = voice.name.toLowerCase();
+                        const lang = voice.lang.toLowerCase();
+                        
+                        // Common Android voice patterns
+                        return lang.startsWith('en') || 
+                               name.includes('google') || 
+                               name.includes('android') ||
+                               name.includes('samsung') ||
+                               voice.default === true;
+                    });
+                    
+                    console.log(`🤖 Android voices found (${androidVoices.length}):`, 
+                        androidVoices.map(v => `${v.name} (${v.lang})`));
+                    
+                    if (androidVoices.length > 0) {
+                        // Try to match language first, then just use first available
+                        bestVoice = androidVoices.find(v => v.lang === targetLang) || 
+                                   androidVoices.find(v => v.lang.startsWith(targetLang.split('-')[0])) ||
+                                   androidVoices[0];
+                        
+                        if (bestVoice) {
+                            console.log(`🤖 Android voice selected: ${bestVoice.name} (${bestVoice.lang})`);
+                            return bestVoice;
+                        }
+                    }
+                    
+                    // If no Android-specific voices, use the first available English voice
+                    const englishVoice = voices.find(v => v.lang.startsWith('en'));
+                    if (englishVoice) {
+                        console.log(`🤖 Android fallback: ${englishVoice.name} (${englishVoice.lang})`);
+                        return englishVoice;
+                    }
+                    
+                    // Last resort - use any voice
+                    if (voices.length > 0) {
+                        console.log(`🤖 Android last resort: ${voices[0].name} (${voices[0].lang})`);
+                        return voices[0];
+                    }
+                    
+                    console.log('🤖 Android: No voices available');
+                    return null;
+                }
                 
                 voices.forEach(voice => {
                     let score = 0;
@@ -721,6 +799,41 @@
             if (bestVoice) {
                 currentUtterance.voice = bestVoice;
                 console.log(`🎤 Using voice: ${bestVoice.name} (${bestVoice.lang}) for ${selectedVoice}`);
+                
+                // Android-specific voice limitation notice
+                if (browserInfo.isAndroid && voices.length <= 2) {
+                    console.log('🤖 Android voice limitation detected');
+                    setTimeout(() => {
+                        const notice = document.createElement('div');
+                        notice.style.cssText = `
+                            position: fixed;
+                            bottom: 20px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            background: #17a2b8;
+                            color: white;
+                            padding: 12px 20px;
+                            border-radius: 6px;
+                            font-size: 14px;
+                            max-width: 350px;
+                            text-align: center;
+                            z-index: 10000;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                        `;
+                        notice.innerHTML = `
+                            📱 <strong>Android Notice:</strong> Limited system voices available. 
+                            Voice selection will use your device's default TTS engine.
+                            <button onclick="this.parentElement.remove()" style="margin-left: 10px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 4px 8px; border-radius: 3px; cursor: pointer;">OK</button>
+                        `;
+                        document.body.appendChild(notice);
+                        
+                        setTimeout(() => {
+                            if (document.body.contains(notice)) {
+                                notice.remove();
+                            }
+                        }, 8000);
+                    }, 2000);
+                }
             }
 
             currentUtterance.onstart = function() {
@@ -1082,7 +1195,18 @@
         loadVoices();
         
         // Browser-specific loading strategies
-        if (browserInfo.isChrome || browserInfo.isEdge) {
+        if (browserInfo.isAndroid) {
+            // Android browsers need more aggressive voice loading
+            console.log('🤖 Android voice loading strategy activated');
+            setTimeout(loadVoices, 500);
+            setTimeout(loadVoices, 1500);
+            setTimeout(loadVoices, 3000);
+            setTimeout(loadVoices, 5000); // Android sometimes takes longer
+            
+            // Force voice loading on user interaction for Android
+            document.addEventListener('touchstart', loadVoices, { once: true });
+            document.addEventListener('click', loadVoices, { once: true });
+        } else if (browserInfo.isChrome || browserInfo.isEdge) {
             // Chrome/Edge typically loads voices asynchronously
             setTimeout(loadVoices, 100);
             setTimeout(loadVoices, 500);
@@ -1151,6 +1275,17 @@
             } else if (browserInfo.isSafari) {
                 content += '<div style="margin-bottom: 8px;">⚠️ <strong>Safari:</strong> Partial support</div>';
                 content += '<div style="font-size: 12px; opacity: 0.9;">• Speech Recognition: Limited<br>• Voice Synthesis: ✅<br>• Best experience in iOS 14.5+</div>';
+            } else if (browserInfo.isAndroid) {
+                if (browserInfo.isAndroidChrome) {
+                    content += '<div style="margin-bottom: 8px;">📱 <strong>Android Chrome:</strong> Good support</div>';
+                    content += '<div style="font-size: 12px; opacity: 0.9;">• Speech Recognition: ✅<br>• Voice Synthesis: Limited voices<br>• Uses system TTS voices</div>';
+                } else if (browserInfo.isAndroidSamsung) {
+                    content += '<div style="margin-bottom: 8px;">📱 <strong>Samsung Browser:</strong> Basic support</div>';
+                    content += '<div style="font-size: 12px; opacity: 0.9;">• Speech Recognition: ✅<br>• Voice Synthesis: System voices only<br>• Consider using Chrome</div>';
+                } else {
+                    content += '<div style="margin-bottom: 8px;">📱 <strong>Android Browser:</strong> Limited support</div>';
+                    content += '<div style="font-size: 12px; opacity: 0.9;">• Speech Recognition: May work<br>• Voice Synthesis: Basic<br>• Recommend Chrome for Android</div>';
+                }
             } else {
                 content += '<div style="margin-bottom: 8px;">❓ <strong>Other Browser</strong></div>';
                 content += '<div style="font-size: 12px; opacity: 0.9;">• For best experience, use Chrome or Edge<br>• Some features may not work</div>';
@@ -1302,6 +1437,8 @@
                 supportedFeatures.speechSynthesis ? 25 : 0,
                 supportedFeatures.mediaDevices ? 25 : 0,
                 (browserInfo.isChrome || browserInfo.isEdge) ? 25 : 
+                (browserInfo.isAndroidChrome) ? 20 :
+                (browserInfo.isAndroid) ? 15 :
                 (browserInfo.isFirefox || browserInfo.isSafari) ? 15 : 5
             ].reduce((a, b) => a + b, 0);
             

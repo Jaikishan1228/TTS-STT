@@ -95,13 +95,24 @@
         
         // Browser detection test
         function detectBrowser() {
-            const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
-            const isEdge = /Edg/.test(navigator.userAgent);
-            const isFirefox = /Firefox/.test(navigator.userAgent);
-            const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+            const userAgent = navigator.userAgent;
+            const isChrome = /Chrome/.test(userAgent) && /Google Inc/.test(navigator.vendor);
+            const isEdge = /Edg/.test(userAgent);
+            const isFirefox = /Firefox/.test(userAgent);
+            const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
+            
+            // Mobile detection
+            const isAndroid = /Android/.test(userAgent);
+            const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+            const isMobile = /Mobile|Android|iPhone|iPad/.test(userAgent);
             
             let browserName = 'Unknown';
-            if (isChrome) browserName = 'Chrome';
+            if (isAndroid && isChrome) browserName = 'Android Chrome';
+            else if (isAndroid && /SamsungBrowser/.test(userAgent)) browserName = 'Samsung Browser';
+            else if (isAndroid) browserName = 'Android Browser';
+            else if (isIOS && isSafari) browserName = 'iOS Safari';
+            else if (isIOS && isChrome) browserName = 'iOS Chrome';
+            else if (isChrome) browserName = 'Chrome';
             else if (isEdge) browserName = 'Edge';
             else if (isFirefox) browserName = 'Firefox';
             else if (isSafari) browserName = 'Safari';
@@ -109,13 +120,16 @@
             document.getElementById('browser-info').innerHTML = `
                 <div class="status success">
                     <strong>Browser:</strong> ${browserName}<br>
-                    <strong>User Agent:</strong> ${navigator.userAgent}<br>
-                    <strong>Platform:</strong> ${navigator.platform}
+                    <strong>Mobile:</strong> ${isMobile ? 'Yes' : 'No'}<br>
+                    <strong>Android:</strong> ${isAndroid ? 'Yes' : 'No'}<br>
+                    <strong>iOS:</strong> ${isIOS ? 'Yes' : 'No'}<br>
+                    <strong>Platform:</strong> ${navigator.platform}<br>
+                    <small><strong>User Agent:</strong> ${navigator.userAgent}</small>
                 </div>
             `;
             
-            log(`Browser detected: ${browserName}`, 'success');
-            return { isChrome, isEdge, isFirefox, isSafari, browserName };
+            log(`Browser detected: ${browserName} (Mobile: ${isMobile}, Android: ${isAndroid})`, 'success');
+            return { isChrome, isEdge, isFirefox, isSafari, isAndroid, isIOS, isMobile, browserName };
         }
         
         // Feature support test
