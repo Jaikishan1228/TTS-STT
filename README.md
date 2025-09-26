@@ -30,7 +30,7 @@ A modern, full-featured web application that combines **Speech-to-Text (STT)** a
 - Serverless function support
 - Cross-platform compatibility
 
-**🎯 Crafted with ❤️ by Jay | [Live Demo](https://your-vercel-url.vercel.app)**
+**🎯 Crafted with ❤️ by Jay | [Live Demo](https://tts-stt-ivory.vercel.app)**
 
 ## 🚀 Quick Start
 
@@ -56,20 +56,10 @@ pip install -r requirements.txt
 python tts_backend.py
 ```
 
-### 🚀 Deploy to Vercel (Production)
-```bash
-# 1. Push your code to GitHub
-git add .
-git commit -m "Fix Vercel deployment"
-git push origin main
+### 🌐 Live Demo
+**[Access the app here: https://tts-stt-ivory.vercel.app](https://tts-stt-ivory.vercel.app)**
 
-# 2. Go to https://vercel.com/new
-# 3. Import your GitHub repository
-# 4. Deploy automatically (no configuration needed)
-# 5. Your app will be live at: https://your-app-name.vercel.app
-```
-
-> **Note**: Vercel deployment uses a minimal `requirements.txt` with only `edge-tts` for TTS functionality. Full STT features (microphone recording) work through the browser's Web Speech API, requiring no server-side dependencies.
+The production deployment is automatically updated when changes are pushed to the main branch. The app uses Vercel's serverless functions with a minimal `requirements.txt` containing only `edge-tts` for TTS functionality. Full STT features work through the browser's Web Speech API, requiring no server-side dependencies.
 
 ## 🎯 How It Works
 
@@ -233,17 +223,6 @@ We welcome contributions! Here's how to get started:
 - Clearly describe the issue with steps to reproduce
 - For feature requests, explain the use case and expected behavior
 
-## 📊 Project Stats
-
-![GitHub Stars](https://img.shields.io/github/stars/Jaikishan1228/TTS-STT?style=social)
-![GitHub Forks](https://img.shields.io/github/forks/Jaikishan1228/TTS-STT?style=social)
-![GitHub Issues](https://img.shields.io/github/issues/Jaikishan1228/TTS-STT)
-![GitHub License](https://img.shields.io/github/license/Jaikishan1228/TTS-STT)
-
-## 📄 License
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
 ## 🙏 Acknowledgments
 
 - **Microsoft Edge TTS** - For providing high-quality neural voice synthesis
@@ -255,7 +234,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 - 🐛 **Issues**: [GitHub Issues](https://github.com/Jaikishan1228/TTS-STT/issues)
 - 💬 **Discussions**: [GitHub Discussions](https://github.com/Jaikishan1228/TTS-STT/discussions)
-- 📧 **Contact**: [jay@example.com](mailto:jay@example.com)
+- 📧 **Contact**: [jay@example.com](mailto:jaikishannishad33@gmail.com)
 
 ---
 
