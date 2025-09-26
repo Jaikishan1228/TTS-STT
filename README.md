@@ -21,8 +21,9 @@ A modern web application that combines **Speech-to-Text (STT)** and **Text-to-Sp
 🌐 **Modern Web Interface**
 - Professional dark theme with responsive design
 - Real-time visual feedback and status indicators
-- Mobile-friendly touch controls
+- Mobile-optimized touch controls with haptic feedback
 - Progressive Web App capabilities
+- Cross-platform mobile and desktop support
 
 🔧 **Browser Compatibility**
 - Enhanced cross-browser support (Chrome, Edge, Firefox, Safari)
@@ -163,6 +164,8 @@ python tts_backend.py
 ```
 
 ### 🌐 Browser Compatibility
+
+#### 🖥️ Desktop Browsers
 | Browser | STT Support | TTS Support | Status | Notes |
 |---------|------------|-------------|---------|-------|
 | **Chrome** | ✅ Full | ✅ Full | Recommended | Best performance |
@@ -171,6 +174,20 @@ python tts_backend.py
 | **Safari** | ⚠️ iOS Only | ✅ Full | Limited | Desktop STT not supported |
 | **Opera** | ❌ Not Supported | ✅ Full | TTS Only | Use Chrome/Edge for STT |
 
+#### 📱 Mobile Browsers (NEW!)
+| Platform | Browser | STT Support | TTS Support | Status | Notes |
+|----------|---------|------------|-------------|---------|-------|
+| **Android** | Chrome | ✅ Optimized | ✅ Full | Recommended | Touch-friendly interface |
+| **Android** | Firefox | ⚠️ Limited | ✅ Full | Partial | Basic functionality |
+| **iOS** | Safari | ✅ Native | ✅ Full | Good | iOS 14.5+ required |
+| **iOS** | Chrome | ⚠️ Limited | ✅ Full | Basic | Uses Safari engine |
+
+> **Mobile Optimizations**: 
+> - Touch-friendly controls with haptic feedback
+> - Battery-optimized speech recognition (non-continuous mode)
+> - Mobile-specific permission handling and error messages
+> - Responsive design for small screens
+> 
 > **Firefox Setup**: Enable speech recognition in `about:config` → set `media.webspeech.recognition.enable` to `true`  
 > **Opera Users**: Speech recognition is not supported. Voice synthesis works normally.
 
@@ -199,6 +216,31 @@ from STT import WebSTT
 # Initialize STT with language
 stt = WebSTT(language='en-US')
 
+# Start recording
+stt.start_recording()
+```
+
+### 📱 Mobile Usage Guide
+
+**Android Devices:**
+1. Open Chrome browser (recommended)
+2. Allow microphone permission when prompted
+3. Tap the record button to start speaking
+4. Speak clearly - the app uses battery-optimized recognition
+5. Use touch controls optimized for mobile screens
+
+**iOS Devices:**
+1. Use Safari (iOS 14.5+) or Chrome
+2. Grant microphone access in browser settings if needed
+3. Hold the record button and speak clearly
+4. Text appears in real-time with haptic feedback
+
+**Mobile Tips:**
+- Hold device 6-12 inches from your mouth
+- Speak in quiet environment for best results
+- Use landscape mode for better text visibility
+- App works offline for TTS, needs internet for STT
+
 # Listen for speech input
 text = stt.listen()
 print(f"You said: {text}")
@@ -223,9 +265,10 @@ stt.close()
 
 ### 🚀 Deployment Options
 - **Local Development**: Instant setup with Python server
-- **Vercel Production**: One-click serverless deployment
+- **Vercel Production**: One-click serverless deployment  
 - **Cross-Platform**: Windows, macOS, Linux support
-- **Mobile Responsive**: Works perfectly on smartphones and tablets
+- **Mobile Optimized**: Native mobile browser support with touch controls
+- **PWA Ready**: Install as app on Android/iOS devices
 
 ## 🤝 Contributing
 

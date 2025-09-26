@@ -17,6 +17,74 @@
     <link rel="stylesheet" href="css/fontawesome.css">
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/fallbacks.css">
+    
+    <!-- Mobile-specific enhancements -->
+    <style>
+        /* Mobile-specific improvements */
+        @media (max-width: 768px) {
+            .btn {
+                min-height: 48px !important; /* Better touch targets */
+                font-size: 16px !important; /* Prevent zoom on iOS */
+                padding: 12px 20px !important;
+                margin: 8px 4px !important;
+            }
+            
+            .record-btn {
+                min-height: 60px !important;
+                width: 100% !important;
+                max-width: 300px !important;
+                font-size: 18px !important;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+            }
+            
+            textarea {
+                font-size: 16px !important; /* Prevent zoom on iOS */
+                min-height: 120px !important;
+                touch-action: manipulation;
+            }
+            
+            input, select {
+                font-size: 16px !important; /* Prevent zoom on iOS */
+                min-height: 44px !important;
+            }
+            
+            .container {
+                padding: 10px !important;
+            }
+            
+            /* iOS-specific fixes */
+            .ios-device * {
+                -webkit-user-select: none;
+                user-select: none;
+                -webkit-touch-callout: none;
+                -webkit-tap-highlight-color: transparent;
+            }
+            
+            .ios-device input, .ios-device textarea {
+                -webkit-user-select: text;
+                user-select: text;
+            }
+            
+            /* Android-specific optimizations */
+            .android-device .record-btn {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            }
+            
+            .android-device .record-btn:active {
+                transform: scale(0.95);
+                transition: transform 0.1s;
+            }
+        }
+        
+        /* Touch-friendly wave animation for mobile */
+        @media (max-width: 768px) {
+            .wave-animation {
+                transform: scale(1.2);
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="header">
@@ -255,19 +323,48 @@
             const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
             const isOpera = /OPR/.test(userAgent) || /Opera/.test(userAgent);
             
+            // Mobile device detection
+            const isAndroid = /Android/.test(userAgent);
+            const isIOS = /iPhone|iPad|iPod/.test(userAgent);
+            const isMobile = isAndroid || isIOS || /Mobile/.test(userAgent);
+            
+            // Mobile browser specific detection
+            const isAndroidChrome = isAndroid && isChrome;
+            const isIOSSafari = isIOS && isSafari;
+            const isIOSChrome = isIOS && isChrome;
+            
             debugLog('🌐 Browser detected:', {
                 chrome: isChrome,
                 edge: isEdge,
                 firefox: isFirefox,
                 safari: isSafari,
                 opera: isOpera,
+                android: isAndroid,
+                ios: isIOS,
+                mobile: isMobile,
+                androidChrome: isAndroidChrome,
+                iosSafari: isIOSSafari,
+                iosChrome: isIOSChrome,
                 userAgent: userAgent
             });
             
-            return { isChrome, isEdge, isFirefox, isSafari, isOpera };
+            return { 
+                isChrome, isEdge, isFirefox, isSafari, isOpera,
+                isAndroid, isIOS, isMobile, isAndroidChrome, isIOSSafari, isIOSChrome
+            };
         }
 
         const browserInfo = checkBrowserSupport();
+
+        // Apply mobile-specific CSS classes
+        if (browserInfo.isMobile) {
+            document.body.classList.add('mobile-device');
+            if (browserInfo.isIOS) {
+                document.body.classList.add('ios-device');
+            } else if (browserInfo.isAndroid) {
+                document.body.classList.add('android-device');
+            }
+        }
 
         // Initialize Speech Recognition with enhanced browser support
         function initializeSpeechRecognition() {
@@ -282,18 +379,44 @@
                     recognition.lang = languageSelect.value;
                     recognition.maxAlternatives = 1;
                     
-                    // Browser-specific optimizations
-                    if (browserInfo.isChrome || browserInfo.isEdge) {
-                        recognition.continuous = true;
-                        recognition.interimResults = true;
-                    } else if (browserInfo.isFirefox) {
-                        // Firefox has limited support, use more conservative settings
-                        recognition.continuous = false;
-                        recognition.interimResults = false;
-                    } else if (browserInfo.isSafari) {
-                        // Safari needs special handling
-                        recognition.continuous = false;
-                        recognition.interimResults = true;
+                    // Browser and platform-specific optimizations
+                    if (browserInfo.isMobile) {
+                        // Mobile devices need special handling
+                        if (browserInfo.isAndroidChrome) {
+                            // Android Chrome works well with Web Speech API
+                            recognition.continuous = false; // Better for mobile battery
+                            recognition.interimResults = true;
+                            debugLog('📱 Android Chrome optimizations applied');
+                        } else if (browserInfo.isIOSSafari) {
+                            // iOS Safari has very limited support
+                            recognition.continuous = false;
+                            recognition.interimResults = false; // iOS Safari doesn't support interim results well
+                            debugLog('📱 iOS Safari optimizations applied');
+                        } else if (browserInfo.isIOSChrome) {
+                            // iOS Chrome uses Safari's engine
+                            recognition.continuous = false;
+                            recognition.interimResults = false;
+                            debugLog('📱 iOS Chrome optimizations applied');
+                        } else {
+                            // Other mobile browsers
+                            recognition.continuous = false;
+                            recognition.interimResults = false;
+                            debugLog('📱 Generic mobile optimizations applied');
+                        }
+                    } else {
+                        // Desktop browsers
+                        if (browserInfo.isChrome || browserInfo.isEdge) {
+                            recognition.continuous = true;
+                            recognition.interimResults = true;
+                        } else if (browserInfo.isFirefox) {
+                            // Firefox has limited support, use more conservative settings
+                            recognition.continuous = false;
+                            recognition.interimResults = false;
+                        } else if (browserInfo.isSafari) {
+                            // Safari needs special handling
+                            recognition.continuous = false;
+                            recognition.interimResults = true;
+                        }
                     }
                     
                     console.log('🎤 Speech Recognition initialized with language:', languageSelect.value);
@@ -324,19 +447,40 @@
             recognition.onresult = function(event) {
                 // Build complete transcript from ALL results (both final and interim)
                 let completeTranscript = '';
+                let finalTranscript = '';
+                let interimTranscript = '';
                 
                 for (let i = 0; i < event.results.length; i++) {
                     const transcript = event.results[i][0].transcript;
-                    completeTranscript += transcript;
                     
-                    // Add space after final results
                     if (event.results[i].isFinal) {
-                        completeTranscript += ' ';
+                        finalTranscript += transcript + ' ';
+                    } else {
+                        interimTranscript += transcript;
                     }
                 }
 
+                // Mobile-specific handling
+                if (browserInfo.isMobile) {
+                    // Mobile devices handle results differently
+                    completeTranscript = finalTranscript + interimTranscript;
+                    
+                    // iOS devices often don't provide interim results well
+                    if (browserInfo.isIOS && finalTranscript) {
+                        completeTranscript = finalTranscript;
+                        // Provide haptic feedback on iOS when text is recognized
+                        if ('vibrate' in navigator) {
+                            navigator.vibrate(25);
+                        }
+                    }
+                } else {
+                    // Desktop handling - same as before
+                    completeTranscript = finalTranscript + interimTranscript;
+                }
+
                 // Clear placeholder text first
-                if (transcriptArea.textContent === 'Your speech will appear here...') {
+                if (transcriptArea.textContent === 'Your speech will appear here...' || 
+                    transcriptArea.textContent === 'Listening...') {
                     transcriptArea.textContent = '';
                 }
 
@@ -347,6 +491,14 @@
                 transcriptArea.scrollTop = transcriptArea.scrollHeight;
                 
                 debugLog('📝 Current transcript:', completeTranscript);
+                
+                // Mobile-specific visual feedback
+                if (browserInfo.isMobile && completeTranscript.trim()) {
+                    transcriptArea.style.backgroundColor = '#f0f8ff';
+                    setTimeout(() => {
+                        transcriptArea.style.backgroundColor = '';
+                    }, 300);
+                }
             };
 
             recognition.onerror = function(event) {
@@ -358,19 +510,41 @@
                 switch(event.error) {
                     case 'not-allowed':
                         errorMessage += 'Microphone permission denied';
-                        userAction = 'Please click the microphone icon in your browser\'s address bar and allow access';
+                        if (browserInfo.isMobile) {
+                            if (browserInfo.isIOS) {
+                                userAction = 'iOS: Go to Settings > Safari > Camera & Microphone > Allow';
+                            } else if (browserInfo.isAndroid) {
+                                userAction = 'Android: Tap the microphone icon in address bar and allow access';
+                            } else {
+                                userAction = 'Please allow microphone access in your mobile browser settings';
+                            }
+                        } else {
+                            userAction = 'Please click the microphone icon in your browser\'s address bar and allow access';
+                        }
                         break;
                     case 'no-speech':
                         errorMessage += 'No speech detected';
-                        userAction = 'Please speak closer to your microphone and try again';
+                        if (browserInfo.isMobile) {
+                            userAction = 'Hold device closer and speak clearly into the microphone';
+                        } else {
+                            userAction = 'Please speak closer to your microphone and try again';
+                        }
                         break;
                     case 'audio-capture':
                         errorMessage += 'Microphone error';
-                        userAction = 'Check your microphone connection and browser permissions';
+                        if (browserInfo.isMobile) {
+                            userAction = 'Check if another app is using the microphone, then try again';
+                        } else {
+                            userAction = 'Check your microphone connection and browser permissions';
+                        }
                         break;
                     case 'network':
                         errorMessage += 'Network error';
-                        userAction = 'Check your internet connection';
+                        if (browserInfo.isMobile) {
+                            userAction = 'Check your mobile data or WiFi connection';
+                        } else {
+                            userAction = 'Check your internet connection';
+                        }
                         break;
                     case 'service-not-allowed':
                         errorMessage += 'Speech service not allowed';
@@ -457,18 +631,40 @@
             recordBtn.disabled = true;
         }
 
-        // Request microphone permission early
+        // Request microphone permission early with mobile-specific handling
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
             navigator.mediaDevices.getUserMedia({ audio: true })
                 .then(function(stream) {
                     console.log('🎤 Microphone permission granted');
                     stream.getTracks().forEach(track => track.stop()); // Stop the stream
-                    updateSTTStatus('success', 'Microphone ready');
-                    setTimeout(() => updateSTTStatus('idle', 'Ready to Listen'), 2000);
+                    
+                    if (browserInfo.isMobile) {
+                        updateSTTStatus('success', 'Tap to speak (Mobile)');
+                        // Add mobile-specific instructions
+                        setTimeout(() => {
+                            if (browserInfo.isIOS) {
+                                updateSTTStatus('idle', 'iOS: Hold button & speak clearly');
+                            } else {
+                                updateSTTStatus('idle', 'Android: Tap to start speaking');
+                            }
+                        }, 3000);
+                    } else {
+                        updateSTTStatus('success', 'Microphone ready');
+                        setTimeout(() => updateSTTStatus('idle', 'Ready to Listen'), 2000);
+                    }
                 })
                 .catch(function(err) {
                     console.warn('🔴 Microphone permission denied:', err);
-                    updateSTTStatus('idle', 'Microphone permission needed');
+                    
+                    if (browserInfo.isMobile) {
+                        if (browserInfo.isIOS) {
+                            updateSTTStatus('idle', 'iOS: Allow microphone in browser settings');
+                        } else {
+                            updateSTTStatus('idle', 'Android: Grant microphone permission');
+                        }
+                    } else {
+                        updateSTTStatus('idle', 'Microphone permission needed');
+                    }
                 });
         }
 
@@ -536,6 +732,40 @@
                 }
             }
         });
+
+        // Mobile-specific touch event handling
+        if (browserInfo.isMobile) {
+            // Add touch events for better mobile interaction
+            recordBtn.addEventListener('touchstart', function(event) {
+                event.preventDefault();
+                this.style.transform = 'scale(0.95)';
+                this.style.opacity = '0.8';
+            });
+
+            recordBtn.addEventListener('touchend', function(event) {
+                event.preventDefault();
+                this.style.transform = 'scale(1)';
+                this.style.opacity = '1';
+            });
+
+            // Add haptic feedback for mobile devices
+            function addHapticFeedback() {
+                if ('vibrate' in navigator) {
+                    navigator.vibrate(50); // Short haptic feedback
+                }
+            }
+
+            // Override click behavior for iOS to ensure proper interaction
+            if (browserInfo.isIOS) {
+                recordBtn.style.cursor = 'pointer';
+                recordBtn.style.webkitTapHighlightColor = 'transparent';
+                
+                // Add additional iOS-specific handling
+                recordBtn.addEventListener('touchstart', function(event) {
+                    addHapticFeedback();
+                });
+            }
+        }
 
         clearBtn.addEventListener('click', clearTranscript);
 
@@ -1214,7 +1444,26 @@
             
             // Browser-specific STT support detection
             let sttSupported = false;
-            if (browserInfo.isChrome || browserInfo.isEdge) {
+            if (browserInfo.isMobile) {
+                // Mobile device STT support
+                if (browserInfo.isAndroidChrome) {
+                    // Android Chrome has good STT support
+                    sttSupported = hasSTTAPI && hasMediaDevices;
+                    debugLog('📱 Android Chrome STT support detected');
+                } else if (browserInfo.isIOSSafari) {
+                    // iOS Safari has limited STT support (iOS 14.5+)
+                    sttSupported = hasSTTAPI;
+                    debugLog('📱 iOS Safari STT support:', sttSupported ? 'Available' : 'Not available');
+                } else if (browserInfo.isIOSChrome) {
+                    // iOS Chrome uses Safari engine but with more limitations
+                    sttSupported = hasSTTAPI;
+                    debugLog('📱 iOS Chrome STT support:', sttSupported ? 'Available' : 'Not available');
+                } else {
+                    // Other mobile browsers - limited support
+                    sttSupported = hasSTTAPI && hasMediaDevices;
+                    debugLog('📱 Mobile browser STT support:', sttSupported ? 'Available' : 'Not available');
+                }
+            } else if (browserInfo.isChrome || browserInfo.isEdge) {
                 sttSupported = hasSTTAPI && hasMediaDevices;
             } else if (browserInfo.isFirefox) {
                 // Firefox needs manual enablement
