@@ -1,0 +1,43 @@
+/* Font Awesome Icons - Local Subset */
+@font-face {
+  font-family: "Font Awesome 6 Free";
+  font-style: normal;
+  font-weight: 900;
+  font-display: block;
+  src: url("fonts/fa-solid-900.woff2") format("woff2"),
+       url("fonts/fa-solid-900.woff") format("woff");
+}
+
+.fas {
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  font-style: normal;
+  font-variant: normal;
+  text-rendering: auto;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Icon definitions for our specific icons */
+.fa-microphone::before { content: "\f130"; }
+.fa-volume-up::before { content: "\f028"; }
+.fa-circle::before { content: "\f111"; }
+.fa-play::before { content: "\f04b"; }
+.fa-stop::before { content: "\f04d"; }
+.fa-trash::before { content: "\f1f8"; }
+.fa-arrow-left::before { content: "\f060"; }
+.fa-download::before { content: "\f019"; }
+.fa-pause::before { content: "\f04c"; }
+.fa-spinner::before { content: "\f110"; }
+.fa-check::before { content: "\f00c"; }
+
+/* Font Awesome animations */
+.fa-spin {
+  animation: fa-spin 2s infinite linear;
+}
+
+@keyframes fa-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

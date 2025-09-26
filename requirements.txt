@@ -1,0 +1,20 @@
+# Speech-to-Text and Text-to-Speech Requirements
+
+# === Web-based STT (Original approach) ===
+selenium>=4.15.0
+webdriver-manager>=4.0.0
+
+# === Python-native STT (Alternative approach) ===
+SpeechRecognition>=3.10.0
+pyaudio>=0.2.11
+pocketsphinx>=5.0.0  # Optional: for offline recognition
+
+# === TTS for Vercel deployment ===
+edge-tts>=6.1.0
+
+# === Text-to-Speech ===
+pygame>=2.5.0
+edge-tts>=6.1.0
+
+# === Utilities ===
+requests>=2.31.0

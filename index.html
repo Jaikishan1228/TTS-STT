@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Advanced Speech Processing Suite - Convert Speech to Text and Text to Speech with Neural Voices">
+    <meta name="keywords" content="speech to text, text to speech, TTS, STT, voice recognition, neural voices">
+    <meta name="author" content="Jay">
+    <title>STT & TTS - Speech Processing</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="assets/icons8-favorite-48.png">
+    <link rel="shortcut icon" type="image/png" href="assets/icons8-favorite-48.png">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/inter-font.css">
+    <link rel="stylesheet" href="css/fontawesome.css">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/fallbacks.css">
+</head>
+<body>
+    <div class="header">
+        <h1>🎙️ STT & TTS</h1>
+        <p>Advanced Speech Processing - Convert Speech to Text and Text to Speech</p>
+    </div>
+
+    <div class="container">
+        <!-- Speech to Text Section -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-microphone"></i>
+                <h2>Speech to Text</h2>
+            </div>
+
+            <div class="status-indicator" id="stt_status">
+                <i class="fas fa-circle"></i>
+                <span>Ready to Listen</span>
+            </div>
+
+            <div class="form-group">
+                <label for="language_select">Recognition Language</label>
+                <select id="language_select" class="form-control">
+                    <option value="en-US">English (US)</option>
+                    <option value="en-GB">English (UK)</option>
+                    <option value="en-AU">English (Australia)</option>
+                    <option value="en-CA">English (Canada)</option>
+                    <option value="en-IN">English (India)</option>
+                    <option value="es-ES">Spanish (Spain)</option>
+                    <option value="es-MX">Spanish (Mexico)</option>
+                    <option value="fr-FR">French (France)</option>
+                    <option value="fr-CA">French (Canada)</option>
+                    <option value="de-DE">German (Germany)</option>
+                    <option value="it-IT">Italian (Italy)</option>
+                    <option value="pt-BR">Portuguese (Brazil)</option>
+                    <option value="pt-PT">Portuguese (Portugal)</option>
+                    <option value="ru-RU">Russian (Russia)</option>
+                    <option value="ja-JP">Japanese (Japan)</option>
+                    <option value="ko-KR">Korean (Korea)</option>
+                    <option value="zh-CN">Chinese (Mandarin)</option>
+                    <option value="zh-TW">Chinese (Traditional)</option>
+                    <option value="ar-SA">Arabic (Saudi Arabia)</option>
+                    <option value="hi-IN">Hindi (India)</option>
+                    <option value="th-TH">Thai (Thailand)</option>
+                    <option value="vi-VN">Vietnamese (Vietnam)</option>
+                    <option value="nl-NL">Dutch (Netherlands)</option>
+                    <option value="sv-SE">Swedish (Sweden)</option>
+                    <option value="da-DK">Danish (Denmark)</option>
+                    <option value="no-NO">Norwegian (Norway)</option>
+                    <option value="fi-FI">Finnish (Finland)</option>
+                    <option value="pl-PL">Polish (Poland)</option>
+                    <option value="cs-CZ">Czech (Czech Republic)</option>
+                    <option value="hu-HU">Hungarian (Hungary)</option>
+                    <option value="ro-RO">Romanian (Romania)</option>
+                    <option value="bg-BG">Bulgarian (Bulgaria)</option>
+                    <option value="hr-HR">Croatian (Croatia)</option>
+                    <option value="sk-SK">Slovak (Slovakia)</option>
+                    <option value="sl-SI">Slovenian (Slovenia)</option>
+                    <option value="et-EE">Estonian (Estonia)</option>
+                    <option value="lv-LV">Latvian (Latvia)</option>
+                    <option value="lt-LT">Lithuanian (Lithuania)</option>
+                    <option value="mt-MT">Maltese (Malta)</option>
+                </select>
+            </div>
+
+            <div class="btn-group">
+                <button id="click_to_record" class="btn btn-primary">
+                    <i class="fas fa-microphone"></i>
+                    Start Recording
+                </button>
+                <button id="stop_recording" class="btn btn-danger" disabled>
+                    <i class="fas fa-stop"></i>
+                    Stop Recording
+                </button>
+                <button id="clear_transcript" class="btn btn-warning">
+                    <i class="fas fa-trash"></i>
+                    Clear
+                </button>
+            </div>
+
+            <div class="form-group">
+                <label>Transcription Output</label>
+                <div class="output-area">
+                    <div id="convert_text" class="transcript-text">Your speech will appear here...</div>
+                </div>
+            </div>
+
+            <div id="wave_animation" class="wave-animation" style="display: none;">
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+            </div>
+
+            <!-- Hidden status element for Python integration -->
+            <div id="is_recording" style="display: none;">Recording: False</div>
+        </div>
+
+        <!-- Text to Speech Section -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-volume-up"></i>
+                <h2>Text to Speech</h2>
+            </div>
+
+            <div class="status-indicator" id="tts_status">
+                <i class="fas fa-circle"></i>
+                <span>Ready to Speak</span>
+            </div>
+
+            <div class="form-group">
+                <label for="tts_voice_select">Voice Selection</label>
+                <select id="tts_voice_select" class="form-control">
+                    <option value="en-US-JennyNeural">Jenny (US) - Friendly Female</option>
+                    <option value="en-US-GuyNeural">Guy (US) - Friendly Male</option>
+                    <option value="en-US-AriaNeural">Aria (US) - News Female</option>
+                    <option value="en-US-DavisNeural">Davis (US) - News Male</option>
+                    <option value="en-US-AmberNeural">Amber (US) - Warm Female</option>
+                    <option value="en-US-AnaNeural">Ana (US) - Child Female</option>
+                    <option value="en-US-BrandonNeural">Brandon (US) - Young Male</option>
+                    <option value="en-US-ChristopherNeural">Christopher (US) - Professional Male</option>
+                    <option value="en-US-CoraNeural">Cora (US) - Mature Female</option>
+                    <option value="en-US-ElizabethNeural">Elizabeth (US) - Calm Female</option>
+                    <option value="en-US-EricNeural">Eric (US) - Casual Male</option>
+                    <option value="en-US-JacobNeural">Jacob (US) - Conversational Male</option>
+                    <option value="en-US-JaneNeural">Jane (US) - Clear Female</option>
+                    <option value="en-US-JasonNeural">Jason (US) - Energetic Male</option>
+                    <option value="en-US-MichelleNeural">Michelle (US) - Expressive Female</option>
+                    <option value="en-US-MonicaNeural">Monica (US) - Pleasant Female</option>
+                    <option value="en-US-NancyNeural">Nancy (US) - Storyteller Female</option>
+                    <option value="en-US-RogerNeural">Roger (US) - Deep Male</option>
+                    <option value="en-US-SaraNeural">Sara (US) - Gentle Female</option>
+                    <option value="en-US-SteffanNeural">Steffan (US) - Warm Male</option>
+                    <option value="en-GB-SoniaNeural">Sonia (UK) - British Female</option>
+                    <option value="en-GB-RyanNeural">Ryan (UK) - British Male</option>
+                    <option value="en-AU-NatashaNeural">Natasha (AU) - Australian Female</option>
+                    <option value="en-AU-WilliamNeural">William (AU) - Australian Male</option>
+                    <option value="en-CA-ClaraNeural">Clara (CA) - Canadian Female</option>
+                    <option value="en-CA-LiamNeural">Liam (CA) - Canadian Male</option>
+                    <option value="en-IN-NeerjaNeural">Neerja (IN) - Indian Female</option>
+                    <option value="en-IN-PrabhatNeural">Prabhat (IN) - Indian Male</option>
+                </select>
+            </div>
+
+            <div class="range-group">
+                <div class="range-control">
+                    <label for="speech_rate">Speech Rate</label>
+                    <input type="range" id="speech_rate" min="0.5" max="2.0" value="1.0" step="0.1">
+                    <div class="range-value" id="rate_value">1.0x</div>
+                </div>
+                <div class="range-control">
+                    <label for="speech_volume">Volume</label>
+                    <input type="range" id="speech_volume" min="0.0" max="1.0" value="0.8" step="0.1">
+                    <div class="range-value" id="volume_value">80%</div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="text_input">Text to Convert</label>
+                <textarea id="text_input" class="form-control" rows="4" placeholder="Enter text to convert to speech..."></textarea>
+            </div>
+
+            <div class="btn-group">
+                <button id="speak_text" class="btn btn-success">
+                    <i class="fas fa-play"></i>
+                    Speak Text
+                </button>
+                <button id="stop_speech" class="btn btn-danger" disabled>
+                    <i class="fas fa-stop"></i>
+                    Stop Speech
+                </button>
+                <button id="save_audio" class="btn btn-primary">
+                    <i class="fas fa-download"></i>
+                    Save Audio
+                </button>
+                <button id="use_transcript" class="btn btn-warning">
+                    <i class="fas fa-arrow-left"></i>
+                    Use Transcript
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Made with ❤️ by <a href="https://github.com/Jaikishan1228" target="_blank">Jay</a> | 
+        <a href="https://github.com/Jaikishan1228/stt-tts-library" target="_blank">GitHub Repository</a></p>
+    </div>
+
+    <script>
+        // Global variables
+        let recognition = null;
+        let isRecording = false;
+        let speechSynthesis = window.speechSynthesis;
+        let currentUtterance = null;
+
+        // DOM Elements
+        const sttStatus = document.getElementById('stt_status');
+        const ttsStatus = document.getElementById('tts_status');
+        const recordBtn = document.getElementById('click_to_record');
+        const stopBtn = document.getElementById('stop_recording');
+        const clearBtn = document.getElementById('clear_transcript');
+        const transcriptArea = document.getElementById('convert_text');
+        const isRecordingDiv = document.getElementById('is_recording');
+        const waveAnimation = document.getElementById('wave_animation');
+        const languageSelect = document.getElementById('language_select');
+        
+        const voiceSelect = document.getElementById('tts_voice_select');
+        const speechRateSlider = document.getElementById('speech_rate');
+        const speechVolumeSlider = document.getElementById('speech_volume');
+        const rateValue = document.getElementById('rate_value');
+        const volumeValue = document.getElementById('volume_value');
+        const textInput = document.getElementById('text_input');
+        const speakBtn = document.getElementById('speak_text');
+        const stopSpeechBtn = document.getElementById('stop_speech');
+        const saveAudioBtn = document.getElementById('save_audio');
+        const useTranscriptBtn = document.getElementById('use_transcript');
+
+        // Initialize Speech Recognition
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.language = languageSelect.value;
+            recognition.maxAlternatives = 1;
+            
+            console.log('🎤 Speech Recognition initialized with language:', languageSelect.value);
+
+            recognition.onstart = function() {
+                updateSTTStatus('recording', 'Recording... Speak now!');
+                isRecording = true;
+                isRecordingDiv.textContent = 'Recording: True';
+                recordBtn.disabled = true;
+                stopBtn.disabled = false;
+                waveAnimation.style.display = 'flex';
+            };
+
+            recognition.onresult = function(event) {
+                let finalTranscript = '';
+                let interimTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript + ' ';
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+
+                // Clear placeholder text first
+                if (transcriptArea.textContent === 'Your speech will appear here...') {
+                    transcriptArea.textContent = '';
+                }
+
+                // Update transcript display with both final and interim results
+                const existingFinalText = transcriptArea.dataset.finalText || '';
+                transcriptArea.dataset.finalText = existingFinalText + finalTranscript;
+                transcriptArea.textContent = transcriptArea.dataset.finalText + interimTranscript;
+                
+                // Auto-scroll to bottom
+                transcriptArea.scrollTop = transcriptArea.scrollHeight;
+            };
+
+            recognition.onerror = function(event) {
+                console.error('🔴 Speech Recognition Error:', event.error, event);
+                
+                let errorMessage = 'Error: ';
+                switch(event.error) {
+                    case 'not-allowed':
+                        errorMessage += 'Microphone permission denied. Please allow microphone access.';
+                        break;
+                    case 'no-speech':
+                        errorMessage += 'No speech detected. Please try again.';
+                        break;
+                    case 'audio-capture':
+                        errorMessage += 'Microphone error. Check your microphone connection.';
+                        break;
+                    case 'network':
+                        errorMessage += 'Network error. Check your internet connection.';
+                        break;
+                    default:
+                        errorMessage += event.error;
+                }
+                
+                updateSTTStatus('idle', errorMessage);
+                resetRecording();
+            };
+
+            recognition.onend = function() {
+                updateSTTStatus('success', 'Transcription completed');
+                resetRecording();
+                
+                // Show final result
+                const finalText = transcriptArea.dataset.finalText || transcriptArea.textContent;
+                if (finalText && finalText !== 'Your speech will appear here...') {
+                    transcriptArea.textContent = finalText.trim();
+                    console.log('📝 Final transcript:', finalText.trim());
+                }
+                
+                setTimeout(() => updateSTTStatus('idle', 'Ready to Listen'), 2000);
+            };
+        } else {
+            updateSTTStatus('idle', 'Speech Recognition not supported in this browser');
+            recordBtn.disabled = true;
+        }
+
+        // Request microphone permission early
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(function(stream) {
+                    console.log('🎤 Microphone permission granted');
+                    stream.getTracks().forEach(track => track.stop()); // Stop the stream
+                    updateSTTStatus('success', 'Microphone ready');
+                    setTimeout(() => updateSTTStatus('idle', 'Ready to Listen'), 2000);
+                })
+                .catch(function(err) {
+                    console.warn('🔴 Microphone permission denied:', err);
+                    updateSTTStatus('idle', 'Microphone permission needed');
+                });
+        }
+
+        // STT Event Listeners
+        recordBtn.addEventListener('click', function() {
+            if (recognition && !isRecording) {
+                recognition.start();
+            }
+        });
+
+        stopBtn.addEventListener('click', function() {
+            if (recognition && isRecording) {
+                recognition.stop();
+            }
+        });
+
+        clearBtn.addEventListener('click', clearTranscript);
+
+        languageSelect.addEventListener('change', function() {
+            if (recognition) {
+                recognition.lang = this.value;
+            }
+        });
+
+        // TTS Event Listeners
+        speechRateSlider.addEventListener('input', function() {
+            rateValue.textContent = this.value + 'x';
+        });
+
+        speechVolumeSlider.addEventListener('input', function() {
+            volumeValue.textContent = Math.round(this.value * 100) + '%';
+        });
+
+        speakBtn.addEventListener('click', function() {
+            const text = textInput.value.trim();
+            if (!text) {
+                alert('Please enter text to speak');
+                return;
+            }
+
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+            }
+
+            console.log('🔊 Starting TTS with:', {
+                text: text.substring(0, 50) + '...',
+                selectedVoice: voiceSelect.value,
+                rate: speechRateSlider.value,
+                volume: speechVolumeSlider.value
+            });
+
+            updateTTSStatus('processing', 'Generating speech...');
+            
+            // For actual TTS, we'll use Web Speech API as a demo
+            // In production, this would call your TTS.py backend
+            currentUtterance = new SpeechSynthesisUtterance(text);
+            currentUtterance.rate = parseFloat(speechRateSlider.value);
+            currentUtterance.volume = parseFloat(speechVolumeSlider.value);
+            
+            // Properly match voice selection with available system voices
+            const voices = speechSynthesis.getVoices();
+            const selectedVoice = voiceSelect.value;
+            
+            // Extract language and gender preferences from selected voice
+            let targetLang = 'en-US';
+            let preferredGender = 'female';
+            let voiceName = '';
+            
+            // Parse the selected Neural voice
+            if (selectedVoice.includes('en-US')) targetLang = 'en-US';
+            else if (selectedVoice.includes('en-GB')) targetLang = 'en-GB';
+            else if (selectedVoice.includes('en-AU')) targetLang = 'en-AU';
+            else if (selectedVoice.includes('en-CA')) targetLang = 'en-CA';
+            else if (selectedVoice.includes('en-IN')) targetLang = 'en-IN';
+            
+            // Extract the voice name (e.g., "Jenny" from "en-US-JennyNeural")
+            const voiceMatch = selectedVoice.match(/en-[A-Z]{2}-([A-Za-z]+)Neural/);
+            if (voiceMatch) {
+                voiceName = voiceMatch[1].toLowerCase();
+            }
+            
+            // Comprehensive male voice detection
+            const maleVoices = [
+                'guy', 'davis', 'brandon', 'christopher', 'eric', 'jacob', 
+                'jason', 'roger', 'steffan', 'ryan', 'william', 'liam', 
+                'prabhat', 'mark', 'george', 'david', 'james', 'thomas',
+                'male', 'man', 'boy'
+            ];
+            
+            const femaleVoices = [
+                'jenny', 'aria', 'amber', 'ana', 'cora', 'elizabeth', 
+                'jane', 'michelle', 'monica', 'nancy', 'sara', 'sonia',
+                'natasha', 'clara', 'neerja', 'susan', 'hazel', 'zira',
+                'female', 'woman', 'girl'
+            ];
+            
+            // Determine gender preference
+            if (maleVoices.includes(voiceName)) {
+                preferredGender = 'male';
+            } else if (femaleVoices.includes(voiceName)) {
+                preferredGender = 'female';
+            } else {
+                // Default based on common patterns
+                preferredGender = maleVoices.some(name => selectedVoice.toLowerCase().includes(name)) ? 'male' : 'female';
+            }
+            
+            // Find best matching voice with comprehensive scoring
+            let bestVoice = null;
+            let bestScore = -1;
+            
+            console.log(`🔍 Looking for voice: ${selectedVoice} (${targetLang}, ${preferredGender}, ${voiceName})`);
+            
+            voices.forEach(voice => {
+                let score = 0;
+                const sysVoiceName = voice.name.toLowerCase();
+                const sysVoiceLang = voice.lang;
+                
+                // Language matching (highest priority)
+                if (sysVoiceLang === targetLang) {
+                    score += 100;
+                } else if (sysVoiceLang.startsWith(targetLang.split('-')[0])) {
+                    score += 50; // Same language, different region
+                } else if (sysVoiceLang.startsWith('en')) {
+                    score += 25; // Any English
+                }
+                
+                // Exact name matching (very high priority)
+                if (voiceName && sysVoiceName.includes(voiceName)) {
+                    score += 200;
+                }
+                
+                // Gender matching
+                const isMaleVoice = maleVoices.some(male => sysVoiceName.includes(male)) ||
+                                   sysVoiceName.includes('male') || sysVoiceName.includes('man');
+                const isFemaleVoice = femaleVoices.some(female => sysVoiceName.includes(female)) ||
+                                     sysVoiceName.includes('female') || sysVoiceName.includes('woman');
+                
+                if (preferredGender === 'male' && isMaleVoice) {
+                    score += 75;
+                } else if (preferredGender === 'female' && isFemaleVoice) {
+                    score += 75;
+                } else if (preferredGender === 'male' && isFemaleVoice) {
+                    score -= 50; // Penalty for wrong gender
+                } else if (preferredGender === 'female' && isMaleVoice) {
+                    score -= 50; // Penalty for wrong gender
+                }
+                
+                // Quality bonus for Neural/Natural voices
+                if (sysVoiceName.includes('neural') || sysVoiceName.includes('natural')) {
+                    score += 10;
+                }
+                
+                console.log(`  ${voice.name} (${voice.lang}): score ${score}`);
+                
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestVoice = voice;
+                }
+            });
+            
+            // Fallback if no good match found
+            if (!bestVoice && voices.length > 0) {
+                const englishVoices = voices.filter(voice => voice.lang.startsWith('en'));
+                bestVoice = englishVoices[0] || voices[0];
+            }
+            
+            if (bestVoice) {
+                currentUtterance.voice = bestVoice;
+                console.log(`🎤 Using voice: ${bestVoice.name} (${bestVoice.lang}) for ${selectedVoice}`);
+            }
+
+            currentUtterance.onstart = function() {
+                updateTTSStatus('processing', 'Speaking...');
+                speakBtn.disabled = true;
+                stopSpeechBtn.disabled = false;
+            };
+
+            currentUtterance.onend = function() {
+                updateTTSStatus('success', 'Speech completed');
+                speakBtn.disabled = false;
+                stopSpeechBtn.disabled = true;
+                setTimeout(() => updateTTSStatus('idle', 'Ready to Speak'), 2000);
+            };
+
+            currentUtterance.onerror = function() {
+                updateTTSStatus('idle', 'Speech error occurred');
+                speakBtn.disabled = false;
+                stopSpeechBtn.disabled = true;
+            };
+
+            speechSynthesis.speak(currentUtterance);
+        });
+
+        stopSpeechBtn.addEventListener('click', function() {
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+                updateTTSStatus('idle', 'Speech stopped');
+                speakBtn.disabled = false;
+                stopSpeechBtn.disabled = true;
+            }
+        });
+
+        useTranscriptBtn.addEventListener('click', function() {
+            const transcript = transcriptArea.textContent;
+            if (transcript && transcript !== 'Your speech will appear here...') {
+                textInput.value = transcript;
+                updateTTSStatus('success', 'Transcript loaded for TTS');
+                setTimeout(() => updateTTSStatus('idle', 'Ready to Speak'), 2000);
+            } else {
+                alert('No transcript available. Please record some speech first.');
+            }
+        });
+
+        saveAudioBtn.addEventListener('click', async function() {
+            const text = textInput.value.trim();
+            if (!text) {
+                alert('Please enter text to save as audio');
+                return;
+            }
+
+            const selectedVoice = voiceSelect.value;
+            const rate = parseFloat(speechRateSlider.value);
+            const volume = parseFloat(speechVolumeSlider.value);
+
+            try {
+                updateTTSStatus('processing', 'Generating audio file...');
+                saveAudioBtn.disabled = true;
+
+                // Call backend TTS API (works both locally and on Vercel)
+                const apiEndpoint = window.location.hostname === 'localhost' ? '/tts' : '/api/tts';
+                const response = await fetch(apiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        voice: selectedVoice,
+                        rate: rate,
+                        volume: volume
+                    })
+                });
+
+                // Check if response is ok and has content
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const responseText = await response.text();
+                if (!responseText.trim()) {
+                    throw new Error('Empty response from server');
+                }
+
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (jsonError) {
+                    console.error('JSON parse error:', jsonError);
+                    console.error('Response text:', responseText);
+                    throw new Error('Invalid JSON response from server');
+                }
+
+                if (result.success) {
+                    updateTTSStatus('success', 'Audio downloaded successfully!');
+                    
+                    // Create download container with link and close button
+                    const downloadContainer = document.createElement('div');
+                    downloadContainer.className = 'download-container';
+                    downloadContainer.style.cssText = `
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        margin-top: 10px;
+                        padding: 10px;
+                        background: rgba(99, 102, 241, 0.1);
+                        border: 1px solid rgba(99, 102, 241, 0.3);
+                        border-radius: 8px;
+                        font-size: 14px;
+                    `;
+                    
+                    const downloadLink = document.createElement('a');
+                    
+                    // Handle both local server (file URL) and Vercel (base64 data)
+                    if (result.audio_url) {
+                        // Local server response with file URL
+                        downloadLink.href = result.audio_url;
+                        downloadLink.download = result.filename;
+                    } else if (result.audio_data) {
+                        // Vercel serverless response with base64 data
+                        const audioBlob = new Blob([
+                            new Uint8Array(atob(result.audio_data).split('').map(c => c.charCodeAt(0)))
+                        ], { type: 'audio/mpeg' });
+                        downloadLink.href = URL.createObjectURL(audioBlob);
+                        downloadLink.download = `tts_audio_${Date.now()}.mp3`;
+                    }
+                    
+                    downloadLink.textContent = `💾 ${downloadLink.download}`;
+                    downloadLink.style.cssText = `
+                        color: #6366f1;
+                        text-decoration: none;
+                        font-weight: 500;
+                        cursor: pointer;
+                    `;
+                    
+                    const closeButton = document.createElement('button');
+                    closeButton.innerHTML = '✕';
+                    closeButton.style.cssText = `
+                        background: none;
+                        border: none;
+                        color: #6366f1;
+                        cursor: pointer;
+                        font-size: 16px;
+                        padding: 0;
+                        width: 20px;
+                        height: 20px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    `;
+                    
+                    downloadContainer.appendChild(downloadLink);
+                    downloadContainer.appendChild(closeButton);
+                    
+                    // Add download container to the interface
+                    const existingContainer = document.querySelector('.download-container');
+                    if (existingContainer) {
+                        existingContainer.remove();
+                    }
+                    
+                    saveAudioBtn.parentNode.appendChild(downloadContainer);
+                    
+                    // Add click handlers
+                    downloadLink.addEventListener('click', function() {
+                        console.log('🎵 Audio download started');
+                        setTimeout(() => {
+                            if (document.body.contains(downloadContainer)) {
+                                downloadContainer.remove();
+                                console.log('🗑️ Download container removed after download');
+                            }
+                        }, 3000); // Remove after 3 seconds to allow download to complete
+                    });
+                    
+                    closeButton.addEventListener('click', function() {
+                        downloadContainer.remove();
+                        console.log('🗑️ Download container manually closed');
+                    });
+                    
+                    // Auto-download
+                    downloadLink.click();
+                    
+                    // Fallback removal after 10 seconds
+                    setTimeout(() => {
+                        if (document.body.contains(downloadContainer)) {
+                            downloadContainer.remove();
+                            console.log('🗑️ Download container removed (fallback)');
+                        }
+                        updateTTSStatus('idle', 'Ready to Speak');
+                    }, 10000);
+                } else {
+                    updateTTSStatus('idle', 'Error: ' + (result.error || 'Failed to generate audio'));
+                    alert('Failed to generate audio: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                updateTTSStatus('idle', 'Network error occurred');
+                console.error('TTS API Error:', error);
+                
+                let errorMessage = 'Error generating audio: ' + error.message;
+                
+                // Check for specific error types
+                if (error.message.includes('405') || error.message.includes('Method Not Allowed')) {
+                    errorMessage = '❌ Backend Server Required!\n\n' +
+                                 'You are using a static file server (like VS Code Live Server).\n' +
+                                 'Audio generation requires the Python backend server.\n\n' +
+                                 'Please:\n' +
+                                 '1. Close this tab\n' +
+                                 '2. Run: python tts_backend.py\n' +
+                                 '3. Open: http://localhost:8000\n\n' +
+                                 'The static server cannot handle TTS requests.';
+                } else if (error.message.includes('fetch')) {
+                    errorMessage = '❌ Backend server not running.\n\n' +
+                                 'Please start the server with: python tts_backend.py\n' +
+                                 'Then access: http://localhost:8000';
+                } else if (error.message.includes('JSON')) {
+                    errorMessage = '❌ Server response error.\n\n' +
+                                 'The server returned invalid data.\n' +
+                                 'Check the server console for details.';
+                }
+                
+                alert(errorMessage);
+            } finally {
+                saveAudioBtn.disabled = false;
+            }
+        });
+
+        // Utility Functions
+        function updateSTTStatus(type, message) {
+            const icon = sttStatus.querySelector('i');
+            const text = sttStatus.querySelector('span');
+            
+            sttStatus.className = `status-indicator status-${type}`;
+            text.textContent = message;
+            
+            switch(type) {
+                case 'recording':
+                    icon.className = 'fas fa-microphone';
+                    break;
+                case 'processing':
+                    icon.className = 'fas fa-spinner fa-spin';
+                    break;
+                case 'success':
+                    icon.className = 'fas fa-check';
+                    break;
+                default:
+                    icon.className = 'fas fa-circle';
+            }
+        }
+
+        function updateTTSStatus(type, message) {
+            const icon = ttsStatus.querySelector('i');
+            const text = ttsStatus.querySelector('span');
+            
+            ttsStatus.className = `status-indicator status-${type}`;
+            text.textContent = message;
+            
+            switch(type) {
+                case 'processing':
+                    icon.className = 'fas fa-spinner fa-spin';
+                    break;
+                case 'success':
+                    icon.className = 'fas fa-check';
+                    break;
+                default:
+                    icon.className = 'fas fa-circle';
+            }
+        }
+
+        function resetRecording() {
+            isRecording = false;
+            isRecordingDiv.textContent = 'Recording: False';
+            recordBtn.disabled = false;
+            stopBtn.disabled = true;
+            waveAnimation.style.display = 'none';
+        }
+
+        // Initialize voices when available
+        let voicesLoaded = false;
+        
+        function loadVoices() {
+            const voices = speechSynthesis.getVoices();
+            if (voices.length > 0 && !voicesLoaded) {
+                voicesLoaded = true;
+                console.log(`🎤 Loaded ${voices.length} system voices:`, voices.map(v => `${v.name} (${v.lang})`));
+                updateTTSStatus('success', 'Voice system ready');
+                setTimeout(() => updateTTSStatus('idle', 'Ready to Speak'), 2000);
+            }
+        }
+        
+        speechSynthesis.onvoiceschanged = loadVoices;
+        
+        // Try to load voices immediately
+        loadVoices();
+        
+        // Fallback: try loading voices after a delay
+        setTimeout(loadVoices, 1000);
+
+        // Clear transcript function
+        function clearTranscript() {
+            transcriptArea.textContent = 'Your speech will appear here...';
+            transcriptArea.dataset.finalText = '';
+            textInput.value = '';
+        }
+        
+        // Add voice change listener for feedback (keeping this for user experience)
+        voiceSelect.addEventListener('change', function() {
+            const selectedVoice = this.value;
+            const voiceName = selectedVoice.split('-')[2]?.replace('Neural', '') || selectedVoice;
+            updateTTSStatus('success', `Voice changed to ${voiceName}`);
+            console.log(`🎤 Voice selection changed to: ${selectedVoice}`);
+            setTimeout(() => updateTTSStatus('idle', 'Ready to Speak'), 2000);
+        });
+
+        // Check if we're running on the correct Python backend server
+        async function checkServerType() {
+            try {
+                const response = await fetch('/test', { method: 'GET' });
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.status === "Server is running") {
+                        console.log('✅ Connected to Python TTS backend server');
+                        return true;
+                    }
+                }
+            } catch (error) {
+                // Likely using a static file server
+                const currentUrl = window.location.href;
+                if (currentUrl.includes('127.0.0.1:5500') || 
+                    currentUrl.includes('localhost:5500') ||
+                    currentUrl.includes('liveserver') ||
+                    !currentUrl.includes('localhost:8000')) {
+                    
+                    // Show warning for static file server users
+                    const warningDiv = document.createElement('div');
+                    warningDiv.innerHTML = `
+                        <div style="position: fixed; top: 0; left: 0; right: 0; z-index: 10000; 
+                                    background: linear-gradient(45deg, #ff6b6b, #ee5a24); 
+                                    color: white; padding: 15px; text-align: center; 
+                                    font-family: Arial, sans-serif; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+                            <strong>⚠️ Static File Server Detected!</strong><br>
+                            <span style="font-size: 14px;">
+                                For full TTS functionality, please run: <code>python tts_backend.py</code> 
+                                and access <code>http://localhost:8000</code>
+                            </span>
+                            <button onclick="this.parentElement.parentElement.remove()" 
+                                    style="margin-left: 10px; background: rgba(255,255,255,0.2); 
+                                           border: 1px solid white; color: white; padding: 5px 10px; 
+                                           border-radius: 3px; cursor: pointer;">✕</button>
+                        </div>
+                    `;
+                    document.body.appendChild(warningDiv);
+                }
+                return false;
+            }
+        }
+
+        // Cleanup temporary files on page load
+        async function cleanupTempFiles() {
+            try {
+                const response = await fetch('/cleanup', { method: 'GET' });
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.cleaned_files > 0) {
+                        console.log(`🧹 Cleaned up ${result.cleaned_files} temporary files`);
+                    }
+                }
+            } catch (error) {
+                console.log('Note: Could not clean up temporary files (server may not be running)');
+            }
+        }
+
+        // Check server type and cleanup on page load
+        checkServerType();
+        cleanupTempFiles();
+        window.addEventListener('beforeunload', cleanupTempFiles);
+
+        // Initial status
+        updateSTTStatus('idle', 'Ready to Listen');
+        updateTTSStatus('idle', 'Ready to Speak');
+    </script>
+</body>
+</html>
