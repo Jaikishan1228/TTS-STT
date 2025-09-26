@@ -205,6 +205,10 @@
                     <i class="fas fa-random"></i>
                     Cycle Voices
                 </button>
+                <button id="force_voice_change" class="btn btn-warning" style="display: none;">
+                    <i class="fas fa-sync"></i>
+                    Force New Voice
+                </button>
             </div>
         </div>
     </div>
@@ -220,6 +224,8 @@
         let isRecording = false;
         let speechSynthesis = window.speechSynthesis;
         let currentUtterance = null;
+        let lastUsedVoice = null; // Track last used voice to force different ones
+        let voiceChangeCounter = 0; // Counter for voice changes
 
         // DOM Elements
         const sttStatus = document.getElementById('stt_status');
@@ -244,6 +250,7 @@
         const useTranscriptBtn = document.getElementById('use_transcript');
         const testVoiceBtn = document.getElementById('test_voice');
         const cycleVoicesBtn = document.getElementById('cycle_voices');
+        const forceVoiceChangeBtn = document.getElementById('force_voice_change');
 
         // Enhanced browser compatibility check with mobile detection
         function checkBrowserSupport() {
@@ -666,74 +673,90 @@
                     console.table(voiceAnalysis);
                 }
                 
-                // Android-specific voice handling - Direct approach for 87 voices
+                // Android-specific voice handling - FORCE different voices for 87 available
                 if (browserInfo.isAndroid) {
-                    console.log('🤖 Android detected - Direct voice selection from 87 voices');
+                    console.log('🤖 Android FORCE VOICE SWITCHING - 87 voices available');
                     console.log(`🤖 Requested: ${selectedVoice} → Target: ${targetLang}, Gender: ${preferredGender}, Name: ${voiceName}`);
                     
-                    // Strategy 1: Try exact name matching first
-                    if (voiceName) {
-                        const exactNameMatch = voices.find(voice => 
-                            voice.name.toLowerCase().includes(voiceName.toLowerCase())
-                        );
-                        if (exactNameMatch) {
-                            console.log(`🤖 ✅ Exact name match: ${exactNameMatch.name} (${exactNameMatch.lang})`);
-                            return exactNameMatch;
+                    // Create a hash from the selected voice to ensure consistent but different selection
+                    const voiceHash = selectedVoice.split('').reduce((a, b) => {
+                        a = ((a << 5) - a) + b.charCodeAt(0);
+                        return a & a;
+                    }, 0);
+                    
+                    // Strategy 1: For specific neural voice selections, force specific patterns
+                    const voiceMapping = {
+                        'en-US-JennyNeural': (voices) => voices.find(v => v.name.toLowerCase().includes('female') && v.lang.startsWith('en-US')) || voices.find(v => v.lang.startsWith('en-US')),
+                        'en-US-GuyNeural': (voices) => voices.find(v => v.name.toLowerCase().includes('male') && v.lang.startsWith('en-US')) || voices.find(v => v.lang.startsWith('en-US')),
+                        'en-GB-SoniaNeural': (voices) => voices.find(v => v.lang.startsWith('en-GB')) || voices.find(v => v.name.toLowerCase().includes('british')),
+                        'en-GB-RyanNeural': (voices) => voices.find(v => v.lang.startsWith('en-GB') && v.name.toLowerCase().includes('male')) || voices.find(v => v.lang.startsWith('en-GB')),
+                        'en-IN-NeerjaNeural': (voices) => voices.find(v => v.lang.startsWith('en-IN')) || voices.find(v => v.name.toLowerCase().includes('india')),
+                        'en-IN-PrabhatNeural': (voices) => voices.find(v => v.lang.startsWith('en-IN') && v.name.toLowerCase().includes('male')) || voices.find(v => v.lang.startsWith('en-IN')),
+                        'en-AU-NatashaNeural': (voices) => voices.find(v => v.lang.startsWith('en-AU')) || voices.find(v => v.name.toLowerCase().includes('australia')),
+                        'en-AU-WilliamNeural': (voices) => voices.find(v => v.lang.startsWith('en-AU') && v.name.toLowerCase().includes('male')) || voices.find(v => v.lang.startsWith('en-AU'))
+                    };
+                    
+                    // Try specific mapping first
+                    if (voiceMapping[selectedVoice]) {
+                        const mappedVoice = voiceMapping[selectedVoice](voices);
+                        if (mappedVoice) {
+                            console.log(`🤖 ✅ MAPPED VOICE: ${mappedVoice.name} (${mappedVoice.lang}) for ${selectedVoice}`);
+                            return mappedVoice;
                         }
                     }
                     
-                    // Strategy 2: Language + Gender combination
-                    const langGenderMatches = voices.filter(voice => {
-                        const matchesLang = voice.lang === targetLang || voice.lang.startsWith(targetLang.split('-')[0]);
-                        const name = voice.name.toLowerCase();
-                        const matchesGender = preferredGender === 'male' ? 
-                            (maleVoices.some(male => name.includes(male)) || name.includes('male') || name.includes('man')) :
-                            (femaleVoices.some(female => name.includes(female)) || name.includes('female') || name.includes('woman'));
-                        return matchesLang && matchesGender;
-                    });
-                    
-                    if (langGenderMatches.length > 0) {
-                        // Pick the first good match or prefer Google/Android voices
-                        const preferredMatch = langGenderMatches.find(voice => 
-                            voice.name.toLowerCase().includes('google') || 
-                            voice.name.toLowerCase().includes('android')
-                        ) || langGenderMatches[0];
-                        
-                        console.log(`🤖 ✅ Lang+Gender match: ${preferredMatch.name} (${preferredMatch.lang})`);
-                        console.log(`🤖 Other options (${langGenderMatches.length}):`, langGenderMatches.map(v => v.name));
-                        return preferredMatch;
-                    }
-                    
-                    // Strategy 3: Just language matching
-                    const langMatches = voices.filter(voice => 
+                    // Strategy 2: Aggressive language matching with rotation
+                    const targetVoices = voices.filter(voice => 
                         voice.lang === targetLang || voice.lang.startsWith(targetLang.split('-')[0])
                     );
                     
-                    if (langMatches.length > 0) {
-                        console.log(`🤖 ✅ Language match: ${langMatches[0].name} (${langMatches[0].lang})`);
-                        console.log(`🤖 Lang options (${langMatches.length}):`, langMatches.map(v => v.name));
-                        return langMatches[0];
+                    if (targetVoices.length > 0) {
+                        // Use hash to pick different voice each time for same selection
+                        const index = Math.abs(voiceHash) % targetVoices.length;
+                        const selectedVoice = targetVoices[index];
+                        console.log(`🤖 ✅ HASH-SELECTED (${index}/${targetVoices.length}): ${selectedVoice.name} (${selectedVoice.lang})`);
+                        console.log(`🤖 Available options:`, targetVoices.map(v => v.name));
+                        return selectedVoice;
                     }
                     
-                    // Strategy 4: Gender matching only
-                    const genderMatches = voices.filter(voice => {
+                    // Strategy 3: Gender-based selection with rotation
+                    const genderVoices = voices.filter(voice => {
                         const name = voice.name.toLowerCase();
-                        return preferredGender === 'male' ? 
-                            (maleVoices.some(male => name.includes(male)) || name.includes('male') || name.includes('man')) :
-                            (femaleVoices.some(female => name.includes(female)) || name.includes('female') || name.includes('woman'));
+                        if (preferredGender === 'male') {
+                            return maleVoices.some(male => name.includes(male)) || name.includes('male') || name.includes('man');
+                        } else {
+                            return femaleVoices.some(female => name.includes(female)) || name.includes('female') || name.includes('woman');
+                        }
                     });
                     
-                    if (genderMatches.length > 0) {
-                        console.log(`🤖 ✅ Gender match: ${genderMatches[0].name} (${genderMatches[0].lang})`);
-                        console.log(`🤖 Gender options (${genderMatches.length}):`, genderMatches.map(v => v.name));
-                        return genderMatches[0];
+                    if (genderVoices.length > 0) {
+                        const index = Math.abs(voiceHash) % genderVoices.length;
+                        const selectedVoice = genderVoices[index];
+                        console.log(`🤖 ✅ GENDER-SELECTED (${index}/${genderVoices.length}): ${selectedVoice.name} (${selectedVoice.lang})`);
+                        return selectedVoice;
                     }
                     
-                    // Strategy 5: Use a different voice each time (round-robin for testing)
-                    const voiceIndex = Math.floor(Math.random() * Math.min(voices.length, 10)); // Random from first 10
-                    const randomVoice = voices[voiceIndex];
-                    console.log(`🤖 ✅ Random voice (${voiceIndex}): ${randomVoice.name} (${randomVoice.lang})`);
-                    return randomVoice;
+                    // Strategy 4: Force different voice using hash + counter (never same voice twice)
+                    if (voices.length > 1) {
+                        voiceChangeCounter++;
+                        let index = (Math.abs(voiceHash) + voiceChangeCounter) % voices.length;
+                        let forcedVoice = voices[index];
+                        
+                        // Ensure we don't use the same voice as last time
+                        if (lastUsedVoice && forcedVoice.name === lastUsedVoice.name && voices.length > 1) {
+                            index = (index + 1) % voices.length;
+                            forcedVoice = voices[index];
+                            console.log(`🤖 🔄 Avoided duplicate, using different voice: ${forcedVoice.name}`);
+                        }
+                        
+                        lastUsedVoice = forcedVoice;
+                        console.log(`🤖 ✅ FORCE-DIFFERENT (${index}/${voices.length}) [#${voiceChangeCounter}]: ${forcedVoice.name} (${forcedVoice.lang})`);
+                        return forcedVoice;
+                    }
+                    
+                    // Last resort
+                    console.log(`🤖 ⚠️ Using first available voice: ${voices[0]?.name}`);
+                    return voices[0];
                 }
                 
                 voices.forEach(voice => {
@@ -1414,6 +1437,53 @@
             speechSynthesis.speak(utterance);
         });
 
+        // Force voice change button for Android - guarantees different voice
+        forceVoiceChangeBtn.addEventListener('click', function() {
+            const text = textInput.value.trim() || "Testing forced voice change";
+            const voices = speechSynthesis.getVoices();
+            
+            if (voices.length <= 1) {
+                updateTTSStatus('idle', 'Not enough voices available');
+                return;
+            }
+            
+            // Pick a completely different voice
+            voiceChangeCounter += 10; // Jump counter to ensure different voice
+            let newVoice;
+            
+            do {
+                const randomIndex = Math.floor(Math.random() * voices.length);
+                newVoice = voices[randomIndex];
+            } while (lastUsedVoice && newVoice.name === lastUsedVoice.name && voices.length > 1);
+            
+            lastUsedVoice = newVoice;
+            console.log(`🔥 FORCE CHANGE to: ${newVoice.name} (${newVoice.lang})`);
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.voice = newVoice;
+            utterance.rate = parseFloat(speechRateSlider.value);
+            utterance.volume = parseFloat(speechVolumeSlider.value);
+            
+            utterance.onstart = () => {
+                updateTTSStatus('processing', `FORCED: ${newVoice.name}`);
+                forceVoiceChangeBtn.disabled = true;
+            };
+            
+            utterance.onend = () => {
+                updateTTSStatus('success', `Used: ${newVoice.name}`);
+                forceVoiceChangeBtn.disabled = false;
+                setTimeout(() => updateTTSStatus('idle', 'Ready to Speak'), 3000);
+            };
+            
+            utterance.onerror = (event) => {
+                updateTTSStatus('idle', 'Force change failed');
+                forceVoiceChangeBtn.disabled = false;
+                console.error('🔥 Force change error:', event.error);
+            };
+            
+            speechSynthesis.speak(utterance);
+        });
+
         // Comprehensive browser compatibility check and user guidance
         function showBrowserGuidance() {
             const guidance = document.createElement('div');
@@ -1623,11 +1693,12 @@
                 console.warn('⚠️ Low compatibility detected. Some features may not work properly.');
             }
             
-            // Show test voice and cycle buttons for Android users
+            // Show test voice, cycle, and force change buttons for Android users
             if (browserInfo.isAndroid && supportedFeatures.speechSynthesis) {
                 testVoiceBtn.style.display = 'inline-block';
                 cycleVoicesBtn.style.display = 'inline-block';
-                console.log('🤖 Test voice and cycle buttons enabled for Android');
+                forceVoiceChangeBtn.style.display = 'inline-block';
+                console.log('🤖 Android voice control buttons enabled (Test, Cycle, Force Change)');
             }
         }
         
