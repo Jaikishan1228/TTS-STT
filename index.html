@@ -197,6 +197,10 @@
                     <i class="fas fa-arrow-left"></i>
                     Use Transcript
                 </button>
+                <button id="test_voice" class="btn btn-secondary" style="display: none;">
+                    <i class="fas fa-vial"></i>
+                    Test Voice
+                </button>
             </div>
         </div>
     </div>
@@ -234,6 +238,7 @@
         const stopSpeechBtn = document.getElementById('stop_speech');
         const saveAudioBtn = document.getElementById('save_audio');
         const useTranscriptBtn = document.getElementById('use_transcript');
+        const testVoiceBtn = document.getElementById('test_voice');
 
         // Enhanced browser compatibility check with mobile detection
         function checkBrowserSupport() {
@@ -643,46 +648,91 @@
                 console.log(`🔍 Looking for voice: ${selectedVoice} (${targetLang}, ${preferredGender}, ${voiceName})`);
                 console.log(`🎤 Available voices (${voices.length}):`, voices.map(v => `${v.name} (${v.lang})`));
                 
-                // Android-specific voice handling
+                // Android-specific voice handling with better selection
                 if (browserInfo.isAndroid) {
-                    console.log('🤖 Android detected - Using simplified voice selection');
+                    console.log('🤖 Android detected - Enhanced voice selection');
+                    console.log(`🤖 Requested voice: ${selectedVoice}, Target: ${targetLang}, Gender: ${preferredGender}`);
                     
-                    // Android typically has very limited voices, often just system defaults
-                    const androidVoices = voices.filter(voice => {
-                        const name = voice.name.toLowerCase();
-                        const lang = voice.lang.toLowerCase();
+                    // First, try to find exact or close matches
+                    voices.forEach(voice => {
+                        let score = 0;
+                        const sysVoiceName = voice.name.toLowerCase();
+                        const sysVoiceLang = voice.lang;
                         
-                        // Common Android voice patterns
-                        return lang.startsWith('en') || 
-                               name.includes('google') || 
-                               name.includes('android') ||
-                               name.includes('samsung') ||
-                               voice.default === true;
+                        // Language matching
+                        if (sysVoiceLang === targetLang) {
+                            score += 100;
+                        } else if (sysVoiceLang.startsWith(targetLang.split('-')[0])) {
+                            score += 70;
+                        } else if (sysVoiceLang.startsWith('en')) {
+                            score += 30;
+                        }
+                        
+                        // Gender matching for Android
+                        const isMaleVoice = maleVoices.some(male => sysVoiceName.includes(male)) ||
+                                           sysVoiceName.includes('male') || sysVoiceName.includes('man');
+                        const isFemaleVoice = femaleVoices.some(female => sysVoiceName.includes(female)) ||
+                                             sysVoiceName.includes('female') || sysVoiceName.includes('woman');
+                        
+                        if (preferredGender === 'male' && isMaleVoice) {
+                            score += 50;
+                        } else if (preferredGender === 'female' && isFemaleVoice) {
+                            score += 50;
+                        }
+                        
+                        // Bonus for Google/Android voices
+                        if (sysVoiceName.includes('google') || sysVoiceName.includes('android')) {
+                            score += 20;
+                        }
+                        
+                        // Name matching bonus
+                        if (voiceName && sysVoiceName.includes(voiceName)) {
+                            score += 80;
+                        }
+                        
+                        console.log(`  🤖 ${voice.name} (${voice.lang}): score ${score}`);
+                        
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestVoice = voice;
+                        }
                     });
                     
-                    console.log(`🤖 Android voices found (${androidVoices.length}):`, 
-                        androidVoices.map(v => `${v.name} (${v.lang})`));
+                    // If we found a decent match, use it
+                    if (bestVoice && bestScore >= 30) {
+                        console.log(`🤖 Android voice selected: ${bestVoice.name} (${bestVoice.lang}) - Score: ${bestScore}`);
+                        return bestVoice;
+                    }
                     
-                    if (androidVoices.length > 0) {
-                        // Try to match language first, then just use first available
-                        bestVoice = androidVoices.find(v => v.lang === targetLang) || 
-                                   androidVoices.find(v => v.lang.startsWith(targetLang.split('-')[0])) ||
-                                   androidVoices[0];
-                        
-                        if (bestVoice) {
-                            console.log(`🤖 Android voice selected: ${bestVoice.name} (${bestVoice.lang})`);
-                            return bestVoice;
+                    // Fallback strategy - be more flexible with Android limitations
+                    console.log('🤖 Using Android fallback strategy...');
+                    
+                    // Try to get a voice that matches the requested gender at least
+                    const genderMatchedVoice = voices.find(voice => {
+                        const name = voice.name.toLowerCase();
+                        if (preferredGender === 'male') {
+                            return maleVoices.some(male => name.includes(male)) || name.includes('male');
+                        } else {
+                            return femaleVoices.some(female => name.includes(female)) || name.includes('female');
                         }
+                    });
+                    
+                    if (genderMatchedVoice) {
+                        console.log(`🤖 Android gender-matched voice: ${genderMatchedVoice.name} (${genderMatchedVoice.lang})`);
+                        return genderMatchedVoice;
                     }
                     
-                    // If no Android-specific voices, use the first available English voice
-                    const englishVoice = voices.find(v => v.lang.startsWith('en'));
-                    if (englishVoice) {
-                        console.log(`🤖 Android fallback: ${englishVoice.name} (${englishVoice.lang})`);
-                        return englishVoice;
+                    // Try language-matched voice
+                    const langMatchedVoice = voices.find(v => 
+                        v.lang === targetLang || v.lang.startsWith(targetLang.split('-')[0])
+                    );
+                    
+                    if (langMatchedVoice) {
+                        console.log(`🤖 Android language-matched voice: ${langMatchedVoice.name} (${langMatchedVoice.lang})`);
+                        return langMatchedVoice;
                     }
                     
-                    // Last resort - use any voice
+                    // Last resort
                     if (voices.length > 0) {
                         console.log(`🤖 Android last resort: ${voices[0].name} (${voices[0].lang})`);
                         return voices[0];
@@ -800,9 +850,9 @@
                 currentUtterance.voice = bestVoice;
                 console.log(`🎤 Using voice: ${bestVoice.name} (${bestVoice.lang}) for ${selectedVoice}`);
                 
-                // Android-specific voice limitation notice
-                if (browserInfo.isAndroid && voices.length <= 2) {
-                    console.log('🤖 Android voice limitation detected');
+                // Android-specific voice information
+                if (browserInfo.isAndroid) {
+                    console.log('🤖 Android voice system detected');
                     setTimeout(() => {
                         const notice = document.createElement('div');
                         notice.style.cssText = `
@@ -815,15 +865,20 @@
                             padding: 12px 20px;
                             border-radius: 6px;
                             font-size: 14px;
-                            max-width: 350px;
+                            max-width: 380px;
                             text-align: center;
                             z-index: 10000;
                             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
                         `;
+                        
+                        const availableVoiceNames = voices.map(v => v.name).join(', ');
+                        const voiceCount = voices.length;
+                        
                         notice.innerHTML = `
-                            📱 <strong>Android Notice:</strong> Limited system voices available. 
-                            Voice selection will use your device's default TTS engine.
-                            <button onclick="this.parentElement.remove()" style="margin-left: 10px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 4px 8px; border-radius: 3px; cursor: pointer;">OK</button>
+                            📱 <strong>Android TTS:</strong> ${voiceCount} system voice${voiceCount !== 1 ? 's' : ''} available<br>
+                            <small>Using: ${bestVoice.name}</small><br>
+                            <button onclick="this.parentElement.remove()" style="margin-top: 8px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 4px 8px; border-radius: 3px; cursor: pointer;">OK</button>
+                            <button onclick="console.log('Available Android voices:', ${JSON.stringify(voices.map(v => ({name: v.name, lang: v.lang})))}); alert('Check console for voice details')" style="margin-top: 8px; margin-left: 5px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 4px 8px; border-radius: 3px; cursor: pointer;">Debug</button>
                         `;
                         document.body.appendChild(notice);
                         
@@ -831,7 +886,7 @@
                             if (document.body.contains(notice)) {
                                 notice.remove();
                             }
-                        }, 8000);
+                        }, 10000);
                     }, 2000);
                 }
             }
@@ -1230,13 +1285,95 @@
             textInput.value = '';
         }
         
-        // Add voice change listener for feedback (keeping this for user experience)
+        // Enhanced voice change listener with Android-specific feedback
         voiceSelect.addEventListener('change', function() {
             const selectedVoice = this.value;
             const voiceName = selectedVoice.split('-')[2]?.replace('Neural', '') || selectedVoice;
-            updateTTSStatus('success', `Voice changed to ${voiceName}`);
+            
             console.log(`🎤 Voice selection changed to: ${selectedVoice}`);
-            setTimeout(() => updateTTSStatus('idle', 'Ready to Speak'), 2000);
+            
+            if (browserInfo.isAndroid) {
+                // For Android, show which system voice will actually be used
+                const voices = speechSynthesis.getVoices();
+                if (voices.length > 0) {
+                    // Simulate the voice matching to show user what will be used
+                    const targetLang = selectedVoice.includes('en-US') ? 'en-US' : 
+                                     selectedVoice.includes('en-GB') ? 'en-GB' : 
+                                     selectedVoice.includes('en-IN') ? 'en-IN' : 'en-US';
+                    
+                    const preferredGender = maleVoices.some(name => selectedVoice.toLowerCase().includes(name)) ? 'male' : 'female';
+                    
+                    // Find what voice will actually be used
+                    const matchedVoice = voices.find(voice => {
+                        const score = (voice.lang === targetLang ? 100 : 
+                                     voice.lang.startsWith(targetLang.split('-')[0]) ? 70 : 0) +
+                                    (preferredGender === 'male' && 
+                                     (maleVoices.some(male => voice.name.toLowerCase().includes(male)) || 
+                                      voice.name.toLowerCase().includes('male')) ? 50 : 0) +
+                                    (preferredGender === 'female' && 
+                                     (femaleVoices.some(female => voice.name.toLowerCase().includes(female)) || 
+                                      voice.name.toLowerCase().includes('female')) ? 50 : 0);
+                        return score > 50;
+                    }) || voices[0];
+                    
+                    updateTTSStatus('success', `${voiceName} → ${matchedVoice.name}`);
+                    console.log(`🤖 Android will use system voice: ${matchedVoice.name} for ${selectedVoice}`);
+                } else {
+                    updateTTSStatus('success', `Voice changed to ${voiceName} (Android)`);
+                }
+            } else {
+                updateTTSStatus('success', `Voice changed to ${voiceName}`);
+            }
+            
+            setTimeout(() => updateTTSStatus('idle', 'Ready to Speak'), 3000);
+        });
+
+        // Test voice button for Android users
+        testVoiceBtn.addEventListener('click', function() {
+            const selectedVoice = voiceSelect.value;
+            const testText = `Testing voice ${selectedVoice.split('-')[2]?.replace('Neural', '') || 'selection'}`;
+            
+            console.log(`🧪 Testing voice: ${selectedVoice}`);
+            
+            // Create a quick test utterance
+            const testUtterance = new SpeechSynthesisUtterance(testText);
+            testUtterance.rate = 1.0;
+            testUtterance.volume = 0.8;
+            
+            // Apply the same voice selection logic
+            const voices = speechSynthesis.getVoices();
+            if (voices.length > 0) {
+                const targetLang = selectedVoice.includes('en-US') ? 'en-US' : 
+                                 selectedVoice.includes('en-GB') ? 'en-GB' : 
+                                 selectedVoice.includes('en-IN') ? 'en-IN' : 'en-US';
+                const preferredGender = maleVoices.some(name => selectedVoice.toLowerCase().includes(name)) ? 'male' : 'female';
+                const voiceName = selectedVoice.match(/en-[A-Z]{2}-([A-Za-z]+)Neural/)?.[1]?.toLowerCase() || '';
+                
+                const testVoice = findBestVoice(voices, selectedVoice, targetLang, preferredGender, voiceName);
+                if (testVoice) {
+                    testUtterance.voice = testVoice;
+                    console.log(`🧪 Test using: ${testVoice.name} (${testVoice.lang})`);
+                }
+            }
+            
+            testUtterance.onstart = () => {
+                updateTTSStatus('processing', 'Testing voice...');
+                testVoiceBtn.disabled = true;
+            };
+            
+            testUtterance.onend = () => {
+                updateTTSStatus('success', 'Voice test completed');
+                testVoiceBtn.disabled = false;
+                setTimeout(() => updateTTSStatus('idle', 'Ready to Speak'), 2000);
+            };
+            
+            testUtterance.onerror = (event) => {
+                updateTTSStatus('idle', 'Voice test failed');
+                testVoiceBtn.disabled = false;
+                console.error('🧪 Voice test error:', event.error);
+            };
+            
+            speechSynthesis.speak(testUtterance);
         });
 
         // Comprehensive browser compatibility check and user guidance
@@ -1446,6 +1583,12 @@
             
             if (compatibilityScore < 50) {
                 console.warn('⚠️ Low compatibility detected. Some features may not work properly.');
+            }
+            
+            // Show test voice button for Android users
+            if (browserInfo.isAndroid && supportedFeatures.speechSynthesis) {
+                testVoiceBtn.style.display = 'inline-block';
+                console.log('🤖 Test voice button enabled for Android');
             }
         }
         
