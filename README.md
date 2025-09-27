@@ -1,352 +1,125 @@
-# 🎙️ Speech Processing Suite
+# 🎙️ TTS-STT Desktop Speech Suite
 
-A modern web application that combines **Speech-to-Text (STT)** and **Text-to-Speech (TTS)** functionality using neural voice synthesis and real-time speech recognition. Perfect for voice-to-text transcription, accessibility features, and content creation ### 🐛 Bug Reports & Feature Requests
-- Use [GitHub Issues](https://github.com/Jaikishan1228/TTS-STT/issues) to report bugs
-- Clearly describe the issue with steps to reproduce
-- For feature requests, explain the use case and expected behavior
+A **desktop-only** speech processing application combining **Speech-to-Text (STT)** and **Text-to-Speech (TTS)** using Microsoft Edge Neural voices and Web Speech API.
 
-## 🔧 Troubleshooting
+> **⚠️ Desktop Only**: Not compatible with mobile devices - requires desktop browsers for full functionality.
 
-### 📱 Mobile Device Issues
-**Problem**: Speech Recognition (STT) not working or duplicating text on mobile devices
+![Interface](assets/Screenshot%202025-09-26%20184031.png)
 
-**Solution**: 
-- **Switch to a desktop computer** - This is the recommended solution
-- Use **Chrome** or **Edge** browser on desktop for best results
-- Mobile STT has known compatibility issues due to browser API limitations
-- TTS (Text-to-Speech) works fine on mobile devices
+## ✨ Features
 
-### 🖥️ Desktop Browser Issues
-**Problem**: STT not working on desktop
+**🎤 Speech Recognition**
+- Real-time speech transcription (50+ languages)
+- Web Speech API integration
+- Desktop microphone optimization
 
-**Solutions**:
-- **Chrome/Edge**: Should work out of the box
-- **Firefox**: Enable in `about:config` → set `media.webspeech.recognition.enable` to `true`
-- **Safari**: STT not supported on macOS, use Chrome instead
-- **Opera**: STT not supported, use Chrome/Edge instead
+**🗣️ Neural Text-to-Speech** 
+- 18+ Microsoft Edge Neural voices
+- Multiple languages: English (US/UK/IN), Spanish, French, German
+- Adjustable speed (0.5x-2.0x) and volume
+- MP3 export capability
 
-**Problem**: Microphone permission denied
-
-**Solution**: 
-- Click the microphone icon in your browser's address bar
-- Allow microphone access for the website
-- Refresh the page after granting permission
-
-## 🙏 Acknowledgments8+ high-quality voices.
-
-> **⚠️ IMPORTANT**: This application is **optimized for desktop browsers**. Mobile support is limited - STT (Speech Recognition) functionality has reliability issues on Android and iOS devices. **Use Chrome or Edge on desktop for the best experience.**
-
-![Speech Processing Suite Interface](assets/Screenshot%202025-09-26%20184031.png)
-
-## ✨ Key Features
-
-🎤 **Advanced Speech Recognition**
-- Real-time speech transcription with live feedback
-- Support for 50+ languages and dialects
-- Web Speech API integration for high accuracy
-- Automatic noise suppression and ambient adjustment
-
-🗣️ **Premium Neural Voices**
-- 18+ Microsoft Edge Neural TTS voices
-- Multiple accents: US, UK, Indian, Spanish, French, German
-- Adjustable speech rate and volume controls
-- High-quality MP3 audio export
-
-🌐 **Modern Web Interface**
-- Professional dark theme with responsive design
-- Real-time visual feedback and status indicators
-- Desktop-optimized interface with full feature support
-- Progressive Web App capabilities
-- **Best experience on desktop browsers**
-
-🔧 **Browser Compatibility**
-- Enhanced cross-browser support (Chrome, Edge, Firefox, Safari)
-- Automatic feature detection and fallbacks
-- Intelligent error handling with user guidance
-- Browser-specific optimizations for best performance
-
-☁️ **Flexible Deployment**
-- Local development server included
-- One-click Vercel deployment ready
-- Serverless function support
-- Cross-platform compatibility
-
-**🎯 Crafted with ❤️ by Jay | [Live Demo](https://stt-tts-three.vercel.app)**
+**🖥️ Desktop Interface**
+- Professional dark theme
+- Real-time visual feedback
+- Browser compatibility: Chrome ✅, Edge ✅, Firefox ⚠️, Safari (TTS only)
 
 ## 🚀 Quick Start
 
-> **📖 Recommended Setup**: Use **Chrome** or **Edge** on a **desktop computer** for optimal performance and full feature compatibility.
-
-### Local Development (Full Features)
+### Local Setup (Recommended)
 ```bash
-# Clone the repository
 git clone https://github.com/Jaikishan1228/TTS-STT.git
 cd TTS-STT
-
-# Install ALL dependencies for local development
 pip install -r requirements-local.txt
-
-# Start the local server
 python tts_backend.py
-
 # Open http://localhost:8000
 ```
 
-### Quick Setup (TTS Only)
+### Cloud Setup (Basic TTS)
 ```bash
-# For basic TTS functionality only
 pip install -r requirements.txt
 python tts_backend.py
 ```
 
-### 🌐 Live Demo
-**[Access the app here: https://stt-tts-three.vercel.app](https://stt-tts-three.vercel.app)**
+**Live Demo**: [https://stt-tts-three.vercel.app](https://stt-tts-three.vercel.app)
 
-The production deployment is automatically updated when changes are pushed to the main branch. The app uses Vercel's serverless functions with a minimal `requirements.txt` containing only `edge-tts` for TTS functionality. Full STT features work through the browser's Web Speech API, requiring no server-side dependencies.
+## 🛠️ How It Works
 
-## 🎯 How It Works
+### Speech-to-Text
+Desktop Microphone → Web Speech API → Live Transcription → Text Output
 
-### 🎤 Speech-to-Text Flow
+### Text-to-Speech  
+Text Input → Voice Selection → Edge Neural TTS → Audio/MP3
+
+## 📁 Project Structure
 ```
-Microphone Input → Web Speech API → Real-time Transcription → Text Output
-```
-- Click **"Start Recording"** to begin speech recognition
-- Speak clearly into your microphone
-- Watch real-time transcription appear in the text area
-- Use **"Stop Recording"** to finish or **"Clear"** to reset
-
-### 🗣️ Text-to-Speech Flow  
-```
-Text Input → Voice Selection → Neural Processing → Audio Generation → MP3 Download
-```
-- Enter or paste text in the **"Text to Convert"** area
-- Choose from **18+ premium neural voices**
-- Adjust **speech rate** (0.5x - 2.0x) and **volume** (0% - 100%)
-- Click **"Speak Text"** for playback or **"Save Audio"** for MP3 download
-
-### ⚙️ Available Voices
-| Language | Male Voices | Female Voices |
-|----------|-------------|---------------|
-| **English (US)** | Guy, Davis, Jason, Tony | Jenny, Aria, Jane, Sara |
-| **English (UK)** | Ryan | Sonia |
-| **English (India)** | Prabhat | Neerja |
-| **Spanish (Spain)** | Alvaro | Elvira |
-| **French (France)** | Henri | Denise |
-| **German (Germany)** | Conrad | Katja |
-
-## 🛠️ Technical Architecture
-
-### System Design
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Web Browser   │◄──►│  Python Backend  │◄──►│   Edge-TTS API  │
-│  (Frontend UI)  │    │ (HTTP Server)    │    │ (Voice Engine)  │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-        │                       │                       │
-        ▼                       ▼                       ▼
-   Real-time UI          Audio Processing        Neural Synthesis
+├── index.html          # Web interface
+├── tts_backend.py      # Local HTTP server
+├── TTS.py             # Neural voice engine
+├── STT.py             # Speech recognition
+├── api/tts.py         # Vercel serverless function
+└── requirements*.txt  # Dependencies
 ```
 
-### 📁 Project Structure
-```
-TTS-STT/
-├── 🌐 index.html              # Main web interface
-├── 🐍 tts_backend.py          # Local development server
-├── 🎤 STT.py                  # Speech recognition engine
-├── 🗣️ TTS.py                  # Text-to-speech engine
-├── 📁 api/
-│   └── tts.py                 # Vercel serverless function
-├── 📁 assets/
-│   ├── icons8-favorite-48.png # Favicon
-│   └── Screenshot...png       # UI preview
-├── 📁 css/                    # Styling (4 optimized files)
-├── 📁 fonts/                  # Web typography
-├── 📁 audio/                  # Generated audio files
-├── ⚙️ vercel.json             # Vercel deployment config
-├── 📋 requirements.txt        # Python dependencies
-├── 🔐 .gitignore              # Git exclusions
-└── 📖 README.md               # This documentation
-```
+## 🔧 Browser Setup
 
-### 🔧 Core Dependencies
-| Package | Purpose | Version |
-|---------|---------|---------|
-| `edge-tts` | Neural voice synthesis | ≥6.1.0 |
-| `pygame` | Audio playback & mixing | Latest |
-| `speech_recognition` | Python STT engine | ≥3.10.0 |
-| `selenium` | Browser automation | ≥4.15.0 |
+| Browser | STT | TTS | Notes |
+|---------|-----|-----|-------|
+| Chrome  | ✅  | ✅  | Recommended |
+| Edge    | ✅  | ✅  | Recommended |
+| Firefox | ⚠️  | ✅  | Requires config* |
+| Safari  | ❌  | ✅  | TTS only |
+| Opera   | ❌  | ✅  | TTS only |
 
-## � Development Guide
+**Firefox Setup**: `about:config` → `media.webspeech.recognition.enable` → `true`
 
-### Local Development Setup
-```bash
-# Install Python 3.8+ and pip
-python --version
+## 💻 Dependencies
 
-# Clone and setup
-git clone https://github.com/Jaikishan1228/TTS-STT.git
-cd TTS-STT
+**Core**: `edge-tts>=6.1.0`
+**Local Development**: `pygame`, `SpeechRecognition`, `pyaudio`, `selenium`
 
-# Install dependencies (choose one)
-pip install -r requirements.txt         # Basic TTS only
-pip install -r requirements-local.txt   # Full development features
+## 🎯 Available Voices
 
-# Run local server
-python tts_backend.py
-# Server starts at http://localhost:8000
+**English**: Jenny, Guy, Aria, Davis (US) | Ryan, Sonia (UK) | Prabhat, Neerja (IN)
+**Spanish**: Alvaro, Elvira
+**French**: Henri, Denise  
+**German**: Conrad, Katja
 
-# For development with auto-reload
-# (Optional) Use nodemon or similar tools
-```
+## 🔧 Troubleshooting
 
-### 🌐 Browser Compatibility
+**STT Not Working?**
+- Use Chrome/Edge browsers
+- Check microphone permissions
+- Firefox: Enable in about:config
 
-#### 🖥️ Desktop Browsers
-| Browser | STT Support | TTS Support | Status | Notes |
-|---------|------------|-------------|---------|-------|
-| **Chrome** | ✅ Full | ✅ Full | Recommended | Best performance |
-| **Edge** | ✅ Full | ✅ Full | Recommended | Native Windows integration |
-| **Firefox** | ⚠️ Manual Setup | ✅ Full | Partial | Requires `about:config` setup |
-| **Safari** | ⚠️ iOS Only | ✅ Full | Limited | Desktop STT not supported |
-| **Opera** | ❌ Not Supported | ✅ Full | TTS Only | Use Chrome/Edge for STT |
+**Audio Issues?**
+- Check system volume
+- Allow browser audio permissions
+- Try different voices
 
-#### 📱 Mobile Browsers ⚠️ **Limited Compatibility**
-| Platform | Browser | STT Support | TTS Support | Status | Notes |
-|----------|---------|------------|-------------|---------|-------|
-| **Android** | Chrome | ❌ Unreliable | ✅ Full | Not Recommended | Text duplication issues |
-| **Android** | Firefox | ❌ Not Supported | ✅ Full | TTS Only | STT functionality broken |
-| **iOS** | Safari | ❌ Inconsistent | ✅ Full | TTS Only | Limited STT support |
-| **iOS** | Chrome | ❌ Not Supported | ✅ Full | TTS Only | Uses Safari engine |
+## 🚀 Deployment
 
-> **⚠️ Mobile Limitations**: 
-> - **Speech Recognition (STT) is NOT reliable on mobile devices**
-> - Android: Frequent text duplication and API inconsistencies
-> - iOS: Limited Web Speech API support, inconsistent behavior  
-> - **Text-to-Speech (TTS) works well on all mobile platforms**
-> - **For best experience, use desktop browsers (Chrome/Edge recommended)**
-> 
-> **Firefox Setup**: Enable speech recognition in `about:config` → set `media.webspeech.recognition.enable` to `true`  
-> **Opera Users**: Speech recognition is not supported. Voice synthesis works normally.
-
-### 🔧 Python API Usage
-```python
-# Text-to-Speech Example
-from TTS import TextToSpeech
-
-# Initialize TTS with specific voice
-tts = TextToSpeech(voice='en-US-JennyNeural')
-
-# Speak text aloud
-tts.speak("Hello! Welcome to Speech Processing Suite.")
-
-# Save as MP3 file
-tts.save_audio("This will be saved as audio", "my_speech.mp3")
-
-# List all available voices
-TextToSpeech.list_voices()
-```
-
-```python
-# Speech-to-Text Example  
-from STT import WebSTT
-
-# Initialize STT with language
-stt = WebSTT(language='en-US')
-
-# Start recording
-stt.start_recording()
-```
-
-### 📱 Mobile Usage Guide
-
-**Android Devices:**
-1. Open Chrome browser (recommended)
-2. Allow microphone permission when prompted
-3. Tap the record button to start speaking
-4. Speak clearly - the app uses battery-optimized recognition
-5. Use touch controls optimized for mobile screens
-
-**iOS Devices:**
-1. Use Safari (iOS 14.5+) or Chrome
-2. Grant microphone access in browser settings if needed
-3. Hold the record button and speak clearly
-4. Text appears in real-time with haptic feedback
-
-**Mobile Tips:**
-- Hold device 6-12 inches from your mouth
-- Speak in quiet environment for best results
-- Use landscape mode for better text visibility
-- App works offline for TTS, needs internet for STT
-
-# Listen for speech input
-text = stt.listen()
-print(f"You said: {text}")
-
-# Close when done
-stt.close()
-```
-
-## 🌟 Features Showcase
-
-### 🎯 Real-time Speech Recognition
-- **Instant Feedback**: Live transcription as you speak
-- **Language Support**: 50+ languages including English, Spanish, French, German, Hindi, Chinese
-- **Noise Filtering**: Automatic background noise suppression
-- **Mobile Ready**: Touch-friendly controls for mobile devices
-
-### 🎭 Premium Neural Voices  
-- **Studio Quality**: Microsoft Edge Neural TTS technology
-- **Natural Speech**: Human-like intonation and pronunciation
-- **Customizable**: Adjustable speech rate (0.5x - 2.0x) and volume
-- **Export Ready**: High-quality MP3 downloads
-
-### 🚀 Deployment Options
-- **Local Development**: Instant setup with Python server
-- **Vercel Production**: One-click serverless deployment  
-- **Cross-Platform**: Windows, macOS, Linux support
-- **Mobile Optimized**: Native mobile browser support with touch controls
-- **PWA Ready**: Install as app on Android/iOS devices
+**Local**: Full features with Python backend
+**Vercel**: Serverless TTS (STT via browser)
+**Requirements**: Python 3.8+, Desktop browser
 
 ## 🤝 Contributing
 
-We welcome contributions! Here's how to get started:
+1. Fork repository
+2. Create feature branch
+3. Test on desktop browsers
+4. Submit pull request
 
-1. **Fork** the repository on GitHub
-2. **Clone** your fork locally
-3. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-4. **Make** your changes and test thoroughly
-5. **Commit** your changes (`git commit -m 'Add amazing feature'`)
-6. **Push** to your branch (`git push origin feature/amazing-feature`)
-7. **Submit** a Pull Request with a clear description
+**Issues**: [GitHub Issues](https://github.com/Jaikishan1228/TTS-STT/issues)
 
-### � Bug Reports & Feature Requests
-- Use [GitHub Issues](https://github.com/Jaikishan1228/TTS-STT/issues) to report bugs
-- Clearly describe the issue with steps to reproduce
-- For feature requests, explain the use case and expected behavior
+## 📞 Support
 
-## 🙏 Acknowledgments
-
-- **Microsoft Edge TTS** - For providing high-quality neural voice synthesis
-- **Web Speech API** - For enabling browser-based speech recognition  
-- **Python Community** - For excellent libraries and frameworks
-- **Open Source Contributors** - For inspiration and collaborative spirit
-
-## 📞 Support & Contact
-
-- 🐛 **Issues**: [GitHub Issues](https://github.com/Jaikishan1228/TTS-STT/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/Jaikishan1228/TTS-STT/discussions)
-- 📧 **Contact**: [jaikishannishad33@gmail.com](mailto:jaikishannishad33@gmail.com)
+- **Issues**: GitHub Issues
+- **Email**: jaikishannishad33@gmail.com
+- **Demo**: https://stt-tts-three.vercel.app
 
 ---
 
-<div align="center">
+**🖥️ Built for Desktop • Neural TTS • Real-time STT**
 
-**🎙️ Speech Processing Suite**
-
-*Transforming voice interactions with cutting-edge technology*
-
-**Made with ❤️ by [Jay](https://github.com/Jaikishan1228)**
-
-[⭐ Star this repo](https://github.com/Jaikishan1228/TTS-STT) • [🐛 Report Bug](https://github.com/Jaikishan1228/TTS-STT/issues) • [✨ Request Feature](https://github.com/Jaikishan1228/TTS-STT/issues)
-
-</div>
+[⭐ Star](https://github.com/Jaikishan1228/TTS-STT) • [🐛 Issues](https://github.com/Jaikishan1228/TTS-STT/issues) • **Made by [Jay](https://github.com/Jaikishan1228)**
